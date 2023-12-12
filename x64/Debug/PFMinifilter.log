@@ -1,0 +1,16 @@
+﻿  Building 'PFMinifilter' with toolset 'WindowsKernelModeDriver10.0' and the 'Desktop' target platform.
+  Stamping x64\Debug\PFMinifilter.inf
+  Stamping [Version] section with DriverVer=12/13/2023,0.20.49.980
+  PFMinifilter.vcxproj -> C:\Users\hieu\Documents\PFMinifilter\x64\Debug\PFMinifilter.sys
+  Done Adding Additional Store
+  Successfully signed: C:\Users\hieu\Documents\PFMinifilter\x64\Debug\PFMinifilter.sys
+  
+  ........................
+  Signability test failed.
+  
+  Errors:
+  22.9.7: DriverVer set to a date in the future (postdated DriverVer not allowed) in PFMinifilter\pfminifilter.inf.
+  
+  Warnings:
+  None
+x64\Debug\inf2catOutput.log : Inf2Cat error -2: "Inf2Cat, signability test failed." Double click to see the tool output.

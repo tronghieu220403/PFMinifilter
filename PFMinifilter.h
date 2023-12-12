@@ -8,24 +8,10 @@
 
 EXTERN_C_START
 
-DRIVER_INITIALIZE DriverEntry;
+NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath);
+
+void DriverUnload(PDRIVER_OBJECT DriverObject);
 
 EXTERN_C_END
 
-//
-//  Assign text sections for each routine.
-//
 
-#ifdef ALLOC_PRAGMA
-#pragma alloc_text(INIT, DriverEntry)
-#pragma alloc_text(INIT, DriverUnload)
-#endif
-
-NTSTATUS DriverEntry(
-    _In_ PDRIVER_OBJECT DriverObject,
-    _In_ PUNICODE_STRING RegistryPath
-);
-
-void DriverUnload(
-    _In_ PDRIVER_OBJECT  DriverObject
-);

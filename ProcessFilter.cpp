@@ -1,5 +1,7 @@
 #include "ProcessFilter.h"
 
+#pragma warning( disable : 4302 4311 )
+
 NTSTATUS filter::ProcessFilter::Register()
 {
     NTSTATUS status = PsSetCreateProcessNotifyRoutine((PCREATE_PROCESS_NOTIFY_ROUTINE)&filter::ProcessFilter::CreateOperation, FALSE);
@@ -26,11 +28,11 @@ void filter::ProcessFilter::CreateOperation(HANDLE ppid, HANDLE pid, BOOLEAN cre
 
 	if (create)
 	{
-		DbgPrint("%d %wZ\n\t\t%d %wZ", (long)ppid, parentProcessName, (long)pid, processName);
+		DbgPrint("%d %wZ\n\t\t%d %wZ", (int)ppid, parentProcessName, (int)pid, processName);
 	}
 	else
 	{
-		DbgPrint("Process %d lost child %wZ, pid: %d", (long)ppid, processName, (long)pid);
+		DbgPrint("Process %d lost child %wZ, pid: %d", (int)ppid, processName, (int)pid);
 	}
 }
 

@@ -5,15 +5,13 @@
 
 #pragma prefast(disable:__WARNING_ENCODE_MEMBER_FUNCTION_POINTER, "Not valid for kernel mode drivers")
 
-EXTERN_C_START
-
 namespace filter
 {
     class FileFilter
     {
     private:
-        static PDRIVER_OBJECT p_driver_object_;
-        static PFLT_FILTER g_filter_handle_;
+        inline static PDRIVER_OBJECT p_driver_object_ = { 0 };
+        inline static PFLT_FILTER g_filter_handle_ = { 0 };
         static const FLT_OPERATION_REGISTRATION callbacks_[]; //  operation registration
         static const FLT_REGISTRATION filter_registration_; //  This defines what we want to filter with FltMgr
 
@@ -44,4 +42,3 @@ namespace filter
     };
 }
 
-EXTERN_C_END

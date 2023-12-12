@@ -2,7 +2,6 @@
 
 namespace filter 
 {
-    
     NTSTATUS FileFilter::Register()
     {
         NTSTATUS status = FltRegisterFilter(p_driver_object_,
@@ -30,6 +29,9 @@ namespace filter
 
     FLT_PREOP_CALLBACK_STATUS FileFilter::PreCreateOperation(PFLT_CALLBACK_DATA Data, PCFLT_RELATED_OBJECTS FltObjects, PVOID* CompletionContext)
     {
+        UNREFERENCED_PARAMETER(FltObjects);
+        UNREFERENCED_PARAMETER(CompletionContext);
+
         PFLT_FILE_NAME_INFORMATION FileNameInfo;
         NTSTATUS status;
         WCHAR Name[260] = { 0 };
@@ -56,7 +58,10 @@ namespace filter
     FLT_PREOP_CALLBACK_STATUS FileFilter::PreWriteOperation(PFLT_CALLBACK_DATA Data, PCFLT_RELATED_OBJECTS FltObjects, PVOID* CompletionContext)
     {
         // Write here
-        
+        UNREFERENCED_PARAMETER(Data);
+        UNREFERENCED_PARAMETER(FltObjects);
+        UNREFERENCED_PARAMETER(CompletionContext);
+
         return FLT_PREOP_SUCCESS_NO_CALLBACK;
     }
 

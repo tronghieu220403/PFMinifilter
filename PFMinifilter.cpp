@@ -27,6 +27,8 @@ NTSTATUS DriverEntry (PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath)
 
 void DriverUnload(PDRIVER_OBJECT DriverObject)
 {
+    UNREFERENCED_PARAMETER(DriverObject);
+
     DbgPrint("Driver Unload Called \r\n");
     filter::FileFilter::Unload(0);
     filter::ProcessFilter::Unload();
