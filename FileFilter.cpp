@@ -154,7 +154,7 @@ namespace filter
         NULL,                               //  Context
         FileFilter::callbacks_,                         //  Operation callbacks
 
-        ::FilterUnload, //  MiniFilterUnload
+        (PFLT_FILTER_UNLOAD_CALLBACK)::FilterUnload, //  MiniFilterUnload
 
         NULL,
         NULL,

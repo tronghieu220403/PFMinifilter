@@ -29,13 +29,13 @@ NTSTATUS DriverEntry (PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath)
     return status;
 }
 
-void FilterUnload(FLT_FILTER_UNLOAD_FLAGS Flags)
+NTSTATUS FilterUnload(FLT_FILTER_UNLOAD_FLAGS Flags)
 {
-    UNREFERENCED_PARAMETER(DriverObject);
+    UNREFERENCED_PARAMETER(Flags);
 
     DebugMessage("Driver Unload Called \r\n");
-    filter::FileFilter::Unload();
+    filter::FileFilter::Unload(0);
     filter::ProcessFilter::Unload();
-    return;
+    return STATUS_SUCCESS;
 }
 

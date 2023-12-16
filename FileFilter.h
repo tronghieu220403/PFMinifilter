@@ -7,7 +7,11 @@
 
 #pragma prefast(disable:__WARNING_ENCODE_MEMBER_FUNCTION_POINTER, "Not valid for kernel mode drivers")
 
-void FilterUnload(FLT_FILTER_UNLOAD_FLAGS Flags);
+EXTERN_C_START
+
+NTSTATUS FilterUnload(FLT_FILTER_UNLOAD_FLAGS Flags);
+
+EXTERN_C_END
 
 namespace filter
 {

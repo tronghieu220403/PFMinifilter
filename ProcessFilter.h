@@ -12,10 +12,10 @@ namespace filter
     class ProcessFilter
     {
     public:
-        NTSTATUS Register();
+        static NTSTATUS Register();
 
-        void CreateOperation(HANDLE ppid, HANDLE pid, BOOLEAN create);
+        static void CreateOperation(HANDLE ppid, HANDLE pid, BOOLEAN create);
 
-        void Unload();
-    }
+        static void Unload();
+    };
 }

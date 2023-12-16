@@ -4,6 +4,7 @@
 #include <dontuse.h>
 
 #include "Debug.h"
+#include "FileFilter.h"
 #include "ProcessFilter.h"
 
 #pragma warning( disable : 4083 4024 4047 )
@@ -17,7 +18,7 @@ EXTERN_C_START
 
 NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath);
 
-void FilterUnload(FLT_FILTER_UNLOAD_FLAGS Flags);
+NTSTATUS FilterUnload(FLT_FILTER_UNLOAD_FLAGS Flags);
 
 EXTERN_C_END
 

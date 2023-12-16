@@ -24,17 +24,6 @@
     </Inf>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="PFMinifilter.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="FileFilter.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ProcessFilter.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
     <ResourceCompile Include="PFMinifilter.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
@@ -52,5 +41,16 @@
     <ClInclude Include="Debug.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="FileFilter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PFMinifilter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ProcessFilter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
