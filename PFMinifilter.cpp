@@ -12,7 +12,6 @@ NTSTATUS DriverEntry (PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath)
     //
     //  Register with FltMgr to tell it our callback routines
     //
-    /*
     filter::FileFilter::SetDriverObjectPtr(DriverObject);
     status = filter::FileFilter::Register();
 
@@ -21,14 +20,14 @@ NTSTATUS DriverEntry (PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath)
         DebugMessage("FileFilter: Register not successfull\n");
         return status;
     }
-    */
+    /*
     status = filter::ProcessFilter::Register();
 
     if (!NT_SUCCESS(status))
     {
         DebugMessage("ProcessFilter: Register not successfull\n");
     }
-
+    */
     return status;
 }
 
@@ -37,7 +36,7 @@ void DriverUnload(PDRIVER_OBJECT DriverObject)
     UNREFERENCED_PARAMETER(DriverObject);
 
     DebugMessage("Driver Unload Called \r\n");
-    // filter::FileFilter::Unload(0);
+    filter::FileFilter::Unload(0);
     // filter::ProcessFilter::Unload();
     return;
 }

@@ -1,77 +1,95 @@
-;
-; PFMinifilter.inf
-;
+;;;
+;;; PFMinifilter
+;;;
+;;;
+;;; Copyright (c) 1999 - 2002, Microsoft Corporation
+;;;
 
 [Version]
-Signature="$WINDOWS NT$"
-Class=System ; TODO: specify appropriate Class
-ClassGuid={4d36e97d-e325-11ce-bfc1-08002be10318} ; TODO: specify appropriate ClassGuid
-Provider=%ManufacturerName%
-CatalogFile=PFMinifilter.cat
-DriverVer= ; TODO: set DriverVer in stampinf property pages
-PnpLockdown=1
+Signature   = "$Windows NT$"
+Class       = "ActivityMonitor"             ;This is determined by the work this filter driver does
+ClassGuid   = {b86dff51-a31e-4bac-b3cf-e8cfe75c9fc2}    ;This value is determined by the Class
+Provider    = %ProviderString%
+DriverVer   = 
+CatalogFile = pfminifilter.cat
+
 
 [DestinationDirs]
-DefaultDestDir = 12
-PFMinifilter_Device_CoInstaller_CopyFiles = 11
+DefaultDestDir          = 12
+PFMinifilter.DriverFiles  = 12            ;%windir%\system32\drivers
 
-[SourceDisksNames]
-1 = %DiskName%,,,""
+;;
+;; Default install sections
+;;
+
+[DefaultInstall]
+OptionDesc  = %ServiceDescription%
+CopyFiles   = PFMinifilter.DriverFiles
+
+[DefaultInstall.Services]
+AddService  = %ServiceName%,,PFMinifilter.Service
+
+;;
+;; Default uninstall sections
+;;
+
+[DefaultUninstall]
+DelFiles   = PFMinifilter.DriverFiles
+
+[DefaultUninstall.Services]
+DelService = %ServiceName%,0x200      ;Ensure service is stopped before deleting
+
+;
+; Services Section
+;
+
+[PFMinifilter.Service]
+DisplayName      = %ServiceName%
+Description      = %ServiceDescription%
+ServiceBinary    = %12%\%DriverName%.sys    ;%windir%\system32\drivers\
+Dependencies     = "FltMgr"
+ServiceType      = 2                        ;SERVICE_FILE_SYSTEM_DRIVER
+StartType        = 3                        ;SERVICE_DEMAND_START
+ErrorControl     = 1                        ;SERVICE_ERROR_NORMAL
+LoadOrderGroup   = "FSFilter Activity Monitor"
+AddReg           = PFMinifilter.AddRegistry
+
+;
+; Registry Modifications
+;
+
+[PFMinifilter.AddRegistry]
+HKR,,"SupportedFeatures",0x00010001,0x3
+HKR,"Instances","DefaultInstance",0x00000000,%DefaultInstance%
+HKR,"Instances\"%Instance1.Name%,"Altitude",0x00000000,%Instance1.Altitude%
+HKR,"Instances\"%Instance1.Name%,"Flags",0x00010001,%Instance1.Flags%
+
+;
+; Copy Files
+;
+
+[PFMinifilter.DriverFiles]
+%DriverName%.sys
 
 [SourceDisksFiles]
-PFMinifilter.sys  = 1,,
-WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+PFMinifilter.sys = 1,,
 
-;*****************************************
-; Install Section
-;*****************************************
+[SourceDisksNames]
+1 = %DiskId1%,,,
 
-[Manufacturer]
-%ManufacturerName%=Standard,NT$ARCH$
-
-[Standard.NT$ARCH$]
-%PFMinifilter.DeviceDesc%=PFMinifilter_Device, Root\PFMinifilter ; TODO: edit hw-id
-
-[PFMinifilter_Device.NT]
-CopyFiles=Drivers_Dir
-
-[Drivers_Dir]
-PFMinifilter.sys
-
-;-------------- Service installation
-[PFMinifilter_Device.NT.Services]
-AddService = PFMinifilter,%SPSVCINST_ASSOCSERVICE%, PFMinifilter_Service_Inst
-
-; -------------- PFMinifilter driver install sections
-[PFMinifilter_Service_Inst]
-DisplayName    = %PFMinifilter.SVCDESC%
-ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
-StartType      = 3               ; SERVICE_DEMAND_START
-ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
-ServiceBinary  = %12%\PFMinifilter.sys
-
-;
-;--- PFMinifilter_Device Coinstaller installation ------
-;
-
-[PFMinifilter_Device.NT.CoInstallers]
-AddReg=PFMinifilter_Device_CoInstaller_AddReg
-CopyFiles=PFMinifilter_Device_CoInstaller_CopyFiles
-
-[PFMinifilter_Device_CoInstaller_AddReg]
-HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
-
-[PFMinifilter_Device_CoInstaller_CopyFiles]
-WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
-
-[PFMinifilter_Device.NT.Wdf]
-KmdfService =  PFMinifilter, PFMinifilter_wdfsect
-[PFMinifilter_wdfsect]
-KmdfLibraryVersion = $KMDFVERSION$
+;;
+;; String Section
+;;
 
 [Strings]
-SPSVCINST_ASSOCSERVICE= 0x00000002
-ManufacturerName="<Your manufacturer name>" ;TODO: Replace with your manufacturer name
-DiskName = "PFMinifilter Installation Disk"
-PFMinifilter.DeviceDesc = "PFMinifilter Device"
-PFMinifilter.SVCDESC = "PFMinifilter Service"
+ProviderString          = "TODO-Set-Provider"
+ServiceDescription      = "PFMinifilter mini-filter driver"
+ServiceName             = "PFMinifilter"
+DriverName              = "PFMinifilter"
+DiskId1                 = "PFMinifilter Device Installation Disk"
+
+;Instances specific information.
+DefaultInstance         = "Null Instance"
+Instance1.Name          = "Null Instance"
+Instance1.Altitude      = "370020"
+Instance1.Flags         = 0x1          ; Suppress automatic attachments
