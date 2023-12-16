@@ -121,7 +121,7 @@ FLT_PREOP_CALLBACK_STATUS FileFilterPreCreateOperation(PFLT_CALLBACK_DATA Data, 
         FltReleaseFileNameInformation(FileNameInfo);
     }
     */
-    return FLT_PREOP_SUCCESS_WITH_CALLBACK;
+    return FLT_PREOP_SUCCESS_NO_CALLBACK;
 }
 
 FLT_PREOP_CALLBACK_STATUS FileFilterPreWriteOperation(PFLT_CALLBACK_DATA Data, PCFLT_RELATED_OBJECTS FltObjects, PVOID* CompletionContext)
@@ -133,7 +133,7 @@ FLT_PREOP_CALLBACK_STATUS FileFilterPreWriteOperation(PFLT_CALLBACK_DATA Data, P
 
     // DebugMessage("File Write");
 
-    return FLT_PREOP_SUCCESS_WITH_CALLBACK;
+    return FLT_PREOP_SUCCESS_NO_CALLBACK;
 }
 
 NTSTATUS FileFilterUnload(FLT_FILTER_UNLOAD_FLAGS Flags)
