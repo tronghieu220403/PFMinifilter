@@ -22,7 +22,11 @@ EXTERN_C_START
 
 NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath);
 
+<<<<<<< HEAD
 void FilterUnload(FLT_FILTER_UNLOAD_FLAGS Flags);
+=======
+void DriverUnload(PDRIVER_OBJECT DriverObject);
+>>>>>>> parent of b207d43 (Update)
 
 EXTERN_C_END
 
@@ -32,6 +36,7 @@ EXTERN_C_END
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text(INIT, DriverEntry)
+<<<<<<< HEAD
 #pragma alloc_text(PAGE, FilterUnload)
 #endif
 
@@ -85,3 +90,7 @@ CONST FLT_REGISTRATION gFilterRegistration =
     NULL,
     NULL
 };
+=======
+#pragma alloc_text(PAGE, DriverUnload)
+#endif
+>>>>>>> parent of b207d43 (Update)
