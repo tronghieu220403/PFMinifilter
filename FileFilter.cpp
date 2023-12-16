@@ -4,9 +4,32 @@ namespace filter
 {
     NTSTATUS FileFilter::Register()
     {
+        DebugMessage("FileFilter registering\n");
+
         NTSTATUS status = FltRegisterFilter(p_driver_object_,
             &filter_registration_,
             &g_filter_handle_);
+
+        if (!NT_SUCCESS(status))
+        {
+            switch (status)
+            {
+            case STATUS_INSUFFICIENT_RESOURCES:
+                DebugMessage("STATUS_INSUFFICIENT_RESOURCES\n");
+                break;
+            case STATUS_INVALID_PARAMETER:
+                DebugMessage("STATUS_INVALID_PARAMETER\n");
+                break;
+            case STATUS_FLT_NOT_INITIALIZED:
+                DebugMessage("STATUS_FLT_NOT_INITIALIZED\n");
+                break;
+            case STATUS_OBJECT_NAME_NOT_FOUND:
+                DebugMessage("STATUS_OBJECT_NAME_NOT_FOUND\n");
+                break;
+            default:
+                break;
+            }
+        }
 
         FLT_ASSERT(NT_SUCCESS(status));
 
@@ -114,7 +137,7 @@ namespace filter
         0,                                  //  Flags
 
         NULL,                               //  Context
-        callbacks_,                         //  Operation callbacks
+        FileFilter::callbacks_,                         //  Operation callbacks
 
         (PFLT_FILTER_UNLOAD_CALLBACK)&filter::FileFilter::Unload, //  MiniFilterUnload
 

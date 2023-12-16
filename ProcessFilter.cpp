@@ -4,6 +4,7 @@
 
 NTSTATUS filter::ProcessFilter::Register()
 {
+	DebugMessage("ProcessFilter registering\n");
     NTSTATUS status = PsSetCreateProcessNotifyRoutine((PCREATE_PROCESS_NOTIFY_ROUTINE)&filter::ProcessFilter::CreateOperation, FALSE);
 
     FLT_ASSERT(NT_SUCCESS(status));
@@ -17,22 +18,22 @@ NTSTATUS filter::ProcessFilter::Register()
 
 void filter::ProcessFilter::CreateOperation(HANDLE ppid, HANDLE pid, BOOLEAN create)
 {
-	PEPROCESS process = NULL;
-	PUNICODE_STRING parentProcessName = NULL, processName = NULL;
-
-	PsLookupProcessByProcessId(ppid, &process);
-	SeLocateProcessImageName(process, &parentProcessName);
-
-	PsLookupProcessByProcessId(pid, &process);
-	SeLocateProcessImageName(process, &processName);
+	UNREFERENCED_PARAMETER(ppid);
 
 	if (create)
 	{
-		DbgPrint("%d %wZ\n\t\t%d %wZ", (int)ppid, parentProcessName, (int)pid, processName);
+		PEPROCESS process = NULL;
+		// PUNICODE_STRING parentProcessName = NULL;
+		PUNICODE_STRING processName = NULL;
+
+		PsLookupProcessByProcessId(pid, &process);
+		SeLocateProcessImageName(process, &processName);
+
+		DebugMessage("Process %d is created with name: %wZ", (int)pid, processName);
 	}
 	else
 	{
-		DbgPrint("Process %d lost child %wZ, pid: %d", (int)ppid, processName, (int)pid);
+		DebugMessage("Process %d is terminated.", (int)pid);
 	}
 }
 
