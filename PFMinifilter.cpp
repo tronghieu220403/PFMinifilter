@@ -7,7 +7,7 @@ NTSTATUS DriverEntry (PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath)
     UNREFERENCED_PARAMETER( RegistryPath );
     DebugMessage("PFMinifilter!DriverEntry: Entered\n");
 
-    DriverObject->DriverUnload = (PDRIVER_UNLOAD)&DriverUnload;
+    // DriverObject->DriverUnload = (PDRIVER_UNLOAD)&DriverUnload;
 
     //
     //  Register with FltMgr to tell it our callback routines
@@ -36,7 +36,6 @@ void DriverUnload(PDRIVER_OBJECT DriverObject)
     UNREFERENCED_PARAMETER(DriverObject);
 
     DebugMessage("Driver Unload Called \r\n");
-    filter::FileFilter::Unload(0);
     // filter::ProcessFilter::Unload();
     return;
 }

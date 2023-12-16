@@ -11,7 +11,7 @@ Class       = "ActivityMonitor"             ;This is determined by the work this
 ClassGuid   = {b86dff51-a31e-4bac-b3cf-e8cfe75c9fc2}    ;This value is determined by the Class
 Provider    = %ProviderString%
 DriverVer   = 
-CatalogFile = pfminifilter.cat
+CatalogFile = PFMinifilter.cat
 
 
 [DestinationDirs]
