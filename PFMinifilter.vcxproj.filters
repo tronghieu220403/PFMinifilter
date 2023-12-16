@@ -27,9 +27,6 @@
     <ClCompile Include="PFMinifilter.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="FileFilter.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ProcessFilter.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -41,9 +38,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PFMinifilter.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="FileFilter.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="ProcessFilter.h">
