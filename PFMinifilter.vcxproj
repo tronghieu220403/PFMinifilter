@@ -37,7 +37,6 @@
   <ItemGroup>
     <ClCompile Include="ProcessFilter.c" />
     <ResourceCompile Include="PFMinifilter.rc" />
-    <ClCompile Include="FileFilter.c" />
     <ClCompile Include="PFMinifilter.c" />
     <Inf Include="PFMinifilter.inf" />
   </ItemGroup>
@@ -230,7 +229,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Debug.h" />
-    <ClInclude Include="FileFilter.h" />
     <ClInclude Include="PFMinifilter.h" />
     <ClInclude Include="ProcessFilter.h" />
   </ItemGroup>
