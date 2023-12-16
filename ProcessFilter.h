@@ -9,21 +9,10 @@
 
 EXTERN_C_START
 
-namespace filter
-{
-    class ProcessFilter
-    {
-    private:
+NTSTATUS ProcessFilterRegister();
 
-    public:
+void ProcessFilterCreateOperation(HANDLE ppid, HANDLE pid, BOOLEAN create);
 
-        static NTSTATUS Register();
-
-        static void CreateOperation(HANDLE ppid, HANDLE pid, BOOLEAN create);
-
-        static void Unload();
-
-    };
-}
+void ProcessFilterUnload();
 
 EXTERN_C_END

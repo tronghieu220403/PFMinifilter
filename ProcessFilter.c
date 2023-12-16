@@ -2,19 +2,19 @@
 
 #pragma warning( disable : 4302 4311 )
 
-NTSTATUS filter::ProcessFilter::Register()
+NTSTATUS ProcessFilterRegister()
 {
 	DebugMessage("ProcessFilter registering\n");
-    NTSTATUS status = PsSetCreateProcessNotifyRoutine((PCREATE_PROCESS_NOTIFY_ROUTINE)&filter::ProcessFilter::CreateOperation, FALSE);
+    NTSTATUS status = PsSetCreateProcessNotifyRoutine((PCREATE_PROCESS_NOTIFY_ROUTINE)&ProcessFilterCreateOperation, FALSE);
 
     if (!NT_SUCCESS(status)) 
     {
-        PsSetCreateProcessNotifyRoutine((PCREATE_PROCESS_NOTIFY_ROUTINE)&filter::ProcessFilter::CreateOperation, TRUE);
+        PsSetCreateProcessNotifyRoutine((PCREATE_PROCESS_NOTIFY_ROUTINE)&ProcessFilterCreateOperation, TRUE);
     }
     return status;
 }
 
-void filter::ProcessFilter::CreateOperation(HANDLE ppid, HANDLE pid, BOOLEAN create)
+void ProcessFilterCreateOperation(HANDLE ppid, HANDLE pid, BOOLEAN create)
 {
 	UNREFERENCED_PARAMETER(ppid);
 
@@ -35,9 +35,9 @@ void filter::ProcessFilter::CreateOperation(HANDLE ppid, HANDLE pid, BOOLEAN cre
 	}
 }
 
-void filter::ProcessFilter::Unload()
+void ProcessFilterUnload()
 {
 	DebugMessage("ProcessFilter Unload: Entered");
 
-    PsSetCreateProcessNotifyRoutine((PCREATE_PROCESS_NOTIFY_ROUTINE)&filter::ProcessFilter::CreateOperation, TRUE);
+    PsSetCreateProcessNotifyRoutine((PCREATE_PROCESS_NOTIFY_ROUTINE)&ProcessFilterCreateOperation, TRUE);
 }

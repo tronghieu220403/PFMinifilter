@@ -4,9 +4,19 @@
 #include <dontuse.h>
 
 #include "Debug.h"
-#include "FileFilter.h"
 #include "ProcessFilter.h"
 
+#pragma warning( disable : 4083 4024 4047 )
+
+#pragma prefast(disable:__WARNING_ENCODE_MEMBER_FUNCTION_POINTER, "Not valid for kernel mode drivers")
+
+
+PDRIVER_OBJECT gDriverObject = { 0 };
+PFLT_FILTER gFilterHandle = { 0 };
+
+/*************************************************************************
+    Prototypes
+*************************************************************************/
 
 EXTERN_C_START
 
@@ -16,44 +26,62 @@ void FilterUnload(FLT_FILTER_UNLOAD_FLAGS Flags);
 
 EXTERN_C_END
 
+//
+//  Assign text sections for each routine.
+//
+
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text(INIT, DriverEntry)
 #pragma alloc_text(PAGE, FilterUnload)
 #endif
 
-namespace filter
+NTSTATUS FileFilterRegister();
+
+FLT_PREOP_CALLBACK_STATUS FileFilterPreCreateOperation(
+    PFLT_CALLBACK_DATA Data,
+    PCFLT_RELATED_OBJECTS FltObjects,
+    PVOID* CompletionContext
+);
+
+FLT_PREOP_CALLBACK_STATUS FileFilterPreWriteOperation(
+    PFLT_CALLBACK_DATA Data,
+    PCFLT_RELATED_OBJECTS FltObjects,
+    PVOID* CompletionContext
+);
+
+NTSTATUS FileFilterUnload(FLT_FILTER_UNLOAD_FLAGS Flags);
+
+CONST FLT_OPERATION_REGISTRATION gCallbacks[] =
 {
-    class FileFilter
-    {
-    private:
-        inline static PDRIVER_OBJECT p_driver_object_ = { 0 };
-        inline static PFLT_FILTER g_filter_handle_ = { 0 };
-        static const FLT_OPERATION_REGISTRATION callbacks_[]; //  operation registration
-        static const FLT_REGISTRATION filter_registration_; //  This defines what we want to filter with FltMgr
+    { IRP_MJ_CREATE,
+        0,
+        (PFLT_PRE_OPERATION_CALLBACK)&FileFilterPreCreateOperation,
+        NULL },
 
-    public:
+    { IRP_MJ_WRITE,
+        0,
+        (PFLT_PRE_OPERATION_CALLBACK)&FileFilterPreWriteOperation,
+        NULL },
 
-        static NTSTATUS Register();
+    { IRP_MJ_OPERATION_END }
+};
 
-        static FLT_PREOP_CALLBACK_STATUS PreCreateOperation(
-            PFLT_CALLBACK_DATA Data,
-            PCFLT_RELATED_OBJECTS FltObjects,
-            PVOID* CompletionContext
-        );
+CONST FLT_REGISTRATION gFilterRegistration =
+{
+    sizeof(FLT_REGISTRATION),
+    FLT_REGISTRATION_VERSION,
+    0,                                  //  Flags
 
-        static FLT_PREOP_CALLBACK_STATUS PreWriteOperation(
-            PFLT_CALLBACK_DATA Data,
-            PCFLT_RELATED_OBJECTS FltObjects,
-            PVOID* CompletionContext
-        );
+    NULL,                               //  Context
+    &gCallbacks,                         //  Operation callbacks
 
-        static NTSTATUS Unload(FLT_FILTER_UNLOAD_FLAGS Flags);
+    (PFLT_FILTER_UNLOAD_CALLBACK)&FilterUnload, //  MiniFilterUnload
 
-        static void SetDriverObjectPtr(const PDRIVER_OBJECT p_driver_object);
-        static PDRIVER_OBJECT GetDriverObjectPtr();
-
-        static void SetFilterHandle(const PFLT_FILTER g_filter_handle);
-        static PFLT_FILTER GetFilterHandle();
-
-    };
-}
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
