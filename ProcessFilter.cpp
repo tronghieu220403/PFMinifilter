@@ -39,5 +39,7 @@ void filter::ProcessFilter::CreateOperation(HANDLE ppid, HANDLE pid, BOOLEAN cre
 
 void filter::ProcessFilter::Unload()
 {
+	DebugMessage("ProcessFilter Unload: Entered");
+
     PsSetCreateProcessNotifyRoutine((PCREATE_PROCESS_NOTIFY_ROUTINE)&filter::ProcessFilter::CreateOperation, TRUE);
 }
