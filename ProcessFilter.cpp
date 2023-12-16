@@ -7,8 +7,6 @@ NTSTATUS filter::ProcessFilter::Register()
 	DebugMessage("ProcessFilter registering\n");
     NTSTATUS status = PsSetCreateProcessNotifyRoutine((PCREATE_PROCESS_NOTIFY_ROUTINE)&filter::ProcessFilter::CreateOperation, FALSE);
 
-    FLT_ASSERT(NT_SUCCESS(status));
-
     if (!NT_SUCCESS(status)) 
     {
         PsSetCreateProcessNotifyRoutine((PCREATE_PROCESS_NOTIFY_ROUTINE)&filter::ProcessFilter::CreateOperation, TRUE);

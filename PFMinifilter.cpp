@@ -70,7 +70,7 @@ namespace filter
             DebugMessage("Reg Oke");
         }
 
-        FLT_ASSERT(NT_SUCCESS(status));
+        // FLT_ASSERT(NT_SUCCESS(status));
 
         if (NT_SUCCESS(status)) {
 
@@ -98,7 +98,7 @@ namespace filter
         UNREFERENCED_PARAMETER(FltObjects);
         UNREFERENCED_PARAMETER(CompletionContext);
 
-        DebugMessage("File Created");
+        // DebugMessage("File Created");
         /*
         PFLT_FILE_NAME_INFORMATION FileNameInfo;
         NTSTATUS status;
@@ -132,7 +132,7 @@ namespace filter
         UNREFERENCED_PARAMETER(FltObjects);
         UNREFERENCED_PARAMETER(CompletionContext);
 
-        DebugMessage("File Write");
+        // DebugMessage("File Write");
 
         return FLT_PREOP_SUCCESS_WITH_CALLBACK;
     }
@@ -177,7 +177,7 @@ namespace filter
           0,
           (PFLT_PRE_OPERATION_CALLBACK)FileFilter::PreWriteOperation,
           NULL },
-
+        
         { IRP_MJ_OPERATION_END }
     };
 
