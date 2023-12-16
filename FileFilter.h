@@ -7,6 +7,12 @@
 
 #pragma prefast(disable:__WARNING_ENCODE_MEMBER_FUNCTION_POINTER, "Not valid for kernel mode drivers")
 
+EXTERN_C_START
+
+void FilterUnload(PDRIVER_OBJECT DriverObject);
+
+EXTERN_C_END
+
 namespace filter
 {
     class FileFilter
@@ -33,6 +39,8 @@ namespace filter
                 PVOID* CompletionContext
             );
 
+        static NTSTATUS Unload(FLT_FILTER_UNLOAD_FLAGS Flags);
+
         static void SetDriverObjectPtr(const PDRIVER_OBJECT p_driver_object);
         static PDRIVER_OBJECT GetDriverObjectPtr();
 
@@ -41,15 +49,3 @@ namespace filter
 
     };
 }
-
-EXTERN_C_START
-
-FLT_PREOP_CALLBACK_STATUS gPreCreateOperation(PFLT_CALLBACK_DATA Data, PCFLT_RELATED_OBJECTS FltObjects, PVOID* CompletionContext);
-FLT_PREOP_CALLBACK_STATUS gPreWriteOperation(PFLT_CALLBACK_DATA Data, PCFLT_RELATED_OBJECTS FltObjects, PVOID* CompletionContext);
-NTSTATUS Unload(FLT_FILTER_UNLOAD_FLAGS Flags);
-
-EXTERN_C_END
-
-#ifdef ALLOC_PRAGMA
-#pragma alloc_text(PAGE, Unload)
-#endif
