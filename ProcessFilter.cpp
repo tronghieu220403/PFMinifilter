@@ -12,7 +12,7 @@ namespace filter
 
 		if (!NT_SUCCESS(status)) 
 		{
-			PsSetCreateProcessNotifyRoutine((PCREATE_PROCESS_NOTIFY_ROUTINE)&ProcessFilter::CreateOperation, TRUE);
+			ProcessFilter::Unload();
 		}
 		return status;
 	}
@@ -41,7 +41,6 @@ namespace filter
 	void ProcessFilter::Unload()
 	{
 		DebugMessage("ProcessFilter Unload: Entered");
-
 		PsSetCreateProcessNotifyRoutine((PCREATE_PROCESS_NOTIFY_ROUTINE)&CreateOperation, TRUE);
 	}
 

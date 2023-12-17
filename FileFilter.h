@@ -46,7 +46,7 @@ namespace filter
             PVOID* completion_context
         );
 
-        static NTSTATUS Unload(FLT_FILTER_UNLOAD_FLAGS flags);
+        static NTSTATUS Unload();
 
         static bool GetFileName(PFLT_CALLBACK_DATA data, PWCHAR name, DWORD32 size);
 

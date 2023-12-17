@@ -47,7 +47,7 @@ namespace filter
 
             if (!NT_SUCCESS(status)) {
 
-                FltUnregisterFilter(g_filter_handle_);
+                FileFilter::Unload();
             }
             else
             {
@@ -115,11 +115,14 @@ namespace filter
         return FLT_PREOP_SUCCESS_NO_CALLBACK;
     }
 
-    NTSTATUS FileFilter::Unload(FLT_FILTER_UNLOAD_FLAGS Flags)
+    NTSTATUS FileFilter::Unload()
     {
-        UNREFERENCED_PARAMETER(Flags);
         DebugMessage("Unload File Filter");
-        FltUnregisterFilter(FileFilter::GetFilterHandle());
+        if (g_filter_handle_ != NULL)
+        {
+            FltUnregisterFilter(g_filter_handle_);
+            g_filter_handle_ = NULL;
+        }
         return STATUS_SUCCESS;
     }
 

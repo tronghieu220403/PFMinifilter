@@ -34,7 +34,7 @@ NTSTATUS FilterUnload(FLT_FILTER_UNLOAD_FLAGS Flags)
     UNREFERENCED_PARAMETER(Flags);
 
     DebugMessage("Driver Unload Called \r\n");
-    filter::FileFilter::Unload(0);
+    filter::FileFilter::Unload();
     filter::ProcessFilter::Unload();
     return STATUS_SUCCESS;
 }
