@@ -58,49 +58,62 @@ namespace filter
         return status;
     }
 
-    FLT_PREOP_CALLBACK_STATUS FileFilter::PreCreateOperationNoPostOperation(PFLT_CALLBACK_DATA Data, PCFLT_RELATED_OBJECTS FltObjects, PVOID* CompletionContext)
+    FLT_PREOP_CALLBACK_STATUS FileFilter::PreCreateOperation(PFLT_CALLBACK_DATA data, PCFLT_RELATED_OBJECTS flt_objects, PVOID* completion_context)
     {
-        UNREFERENCED_PARAMETER(Data);
-        UNREFERENCED_PARAMETER(FltObjects);
-        UNREFERENCED_PARAMETER(CompletionContext);
-        DebugMessage("File Create");
-        /*
-        PFLT_FILE_NAME_INFORMATION FileNameInfo;
-        NTSTATUS status;
-        WCHAR Name[260] = { 0 };
+        UNREFERENCED_PARAMETER(data);
+        UNREFERENCED_PARAMETER(flt_objects);
+        UNREFERENCED_PARAMETER(completion_context);
 
-        status = FltGetFileNameInformation(Data, FLT_FILE_NAME_NORMALIZED | FLT_FILE_NAME_QUERY_DEFAULT, &FileNameInfo);
-
-        if (NT_SUCCESS(status))
-        {
-            status = FltParseFileNameInformation(FileNameInfo);
-
-            if (NT_SUCCESS(status))
-            {
-                if (FileNameInfo->Name.MaximumLength < 260)
-                {
-                    RtlCopyMemory(Name, FileNameInfo->Name.Buffer, FileNameInfo->Name.MaximumLength);
-                    DebugMessage(("create file: %ws \r\n", Name));
-                }
-            }
-            FltReleaseFileNameInformation(FileNameInfo);
-        }
-        */
-        return FLT_PREOP_SUCCESS_NO_CALLBACK;
+        return FLT_PREOP_SUCCESS_WITH_CALLBACK;
     }
 
-    FLT_PREOP_CALLBACK_STATUS FileFilter::PreWriteOperationNoPostOperation(PFLT_CALLBACK_DATA Data, PCFLT_RELATED_OBJECTS FltObjects, PVOID* CompletionContext)
+    FLT_POSTOP_CALLBACK_STATUS FileFilter::PostCreateOperation(PFLT_CALLBACK_DATA data, PCFLT_RELATED_OBJECTS flt_objects, PVOID completion_context, FLT_POST_OPERATION_FLAGS Flags)
+    {
+
+        UNREFERENCED_PARAMETER(flt_objects);
+        UNREFERENCED_PARAMETER(completion_context);
+        UNREFERENCED_PARAMETER(Flags);
+
+        if (data && data->Iopb && data->Iopb->MajorFunction == IRP_MJ_CREATE)
+        {
+            WCHAR name[260] = { 0 };
+
+            if (FileFilter::GetFileName(data, name, 260) == false)
+            {
+                return FLT_POSTOP_FINISHED_PROCESSING;
+            }
+            UINT64 flag = data->IoStatus.Information;
+
+            if (flag == FILE_CREATED)
+            {
+                DebugMessage("File is created: %ws \r\n", name);
+            }
+        }
+
+        return FLT_POSTOP_FINISHED_PROCESSING;
+    }
+
+    FLT_PREOP_CALLBACK_STATUS FileFilter::PreWriteOperationNoPostOperation(PFLT_CALLBACK_DATA data, PCFLT_RELATED_OBJECTS flt_objects, PVOID* completion_context)
     {
         // Write here
-        UNREFERENCED_PARAMETER(Data);
-        UNREFERENCED_PARAMETER(FltObjects);
-        UNREFERENCED_PARAMETER(CompletionContext);
+        UNREFERENCED_PARAMETER(flt_objects);
+        UNREFERENCED_PARAMETER(completion_context);
 
-        DebugMessage("File Write");
+        if (data && data->Iopb && data->Iopb->MajorFunction == IRP_MJ_WRITE)
+        {
+            WCHAR name[260] = { 0 };
+
+            if (FileFilter::GetFileName(data, name, 260) == false)
+            {
+                return FLT_PREOP_SUCCESS_NO_CALLBACK;
+            }
+            ULONG written = data->Iopb->Parameters.Write.Length;
+
+            DebugMessage("File %ws is written %x bytes,  \r\n", name, written);
+        }
 
         return FLT_PREOP_SUCCESS_NO_CALLBACK;
     }
-
 
     NTSTATUS FileFilter::Unload(FLT_FILTER_UNLOAD_FLAGS Flags)
     {
@@ -108,6 +121,60 @@ namespace filter
         DebugMessage("Unload File Filter");
         FltUnregisterFilter(FileFilter::GetFilterHandle());
         return STATUS_SUCCESS;
+    }
+
+    bool FileFilter::GetFileName(PFLT_CALLBACK_DATA data, PWCHAR name, DWORD32 size)
+    {
+        PFLT_FILE_NAME_INFORMATION file_name_info;
+        NTSTATUS status;
+        bool ret;
+
+        if (data == nullptr || name == nullptr)
+        {
+            return false;
+        }
+        if (data->Iopb != NULL && data->Iopb->TargetFileObject != NULL)
+        {
+            PWCH buffer = data->Iopb->TargetFileObject->FileName.Buffer;
+            USHORT max_length = data->Iopb->TargetFileObject->FileName.MaximumLength;
+            USHORT length = data->Iopb->TargetFileObject->FileName.Length;
+            if (buffer != NULL && max_length < size && length > 0)
+            {
+                RtlCopyMemory(name, buffer, max_length);
+                return true;
+            }
+        }
+
+        status = FltGetFileNameInformation(data, FLT_FILE_NAME_NORMALIZED | FLT_FILE_NAME_QUERY_DEFAULT, &file_name_info);
+
+        if (NT_SUCCESS(status))
+        {
+            status = FltParseFileNameInformation(file_name_info);
+
+            if (NT_SUCCESS(status))
+            {
+                ret = true;
+                if (file_name_info->Name.MaximumLength < size)
+                {
+                    RtlCopyMemory(name, file_name_info->Name.Buffer, file_name_info->Name.MaximumLength);
+                }
+                else
+                {
+                    ret = false;
+                }
+            }
+            else 
+            {
+                ret = false;
+            }
+            FltReleaseFileNameInformation(file_name_info);
+        }
+        else
+        {
+            ret = false;
+        }
+
+        return ret;
     }
 
     void FileFilter::SetDriverObjectPtr(const PDRIVER_OBJECT p_driver_object)
@@ -134,8 +201,8 @@ namespace filter
     {
         { IRP_MJ_CREATE,
           0,
-          FileFilter::PreCreateOperationNoPostOperation,
-          NULL },
+          FileFilter::PreCreateOperation,
+          FileFilter::PostCreateOperation },
 
         { IRP_MJ_WRITE,
           0,

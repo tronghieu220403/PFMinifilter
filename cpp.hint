@@ -5,3 +5,7 @@
 #define EXTERN_C_START extern "C" {
 #define EXTERN_C_END }
 #define EXTERN_C_END
+#define _Inout_ _SAL2_Source_(_Inout_, (), _Prepost_valid_)
+#define _Inout_
+#define _In_ _SAL2_Source_(_In_, (), _Pre1_impl_(__notnull_impl_notref) _Pre_valid_impl_ _Deref_pre1_impl_(__readaccess_impl_notref))
+#define _In_

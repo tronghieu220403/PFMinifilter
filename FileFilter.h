@@ -27,19 +27,28 @@ namespace filter
 
         static NTSTATUS Register();
 
-        static FLT_PREOP_CALLBACK_STATUS PreCreateOperationNoPostOperation(
-                PFLT_CALLBACK_DATA Data,
-                PCFLT_RELATED_OBJECTS FltObjects,
-                PVOID* CompletionContext
+        static FLT_PREOP_CALLBACK_STATUS PreCreateOperation(
+                PFLT_CALLBACK_DATA data,
+                PCFLT_RELATED_OBJECTS flt_objects,
+                PVOID* completion_context
             );
+
+        static FLT_POSTOP_CALLBACK_STATUS PostCreateOperation(
+                PFLT_CALLBACK_DATA data,
+                PCFLT_RELATED_OBJECTS flt_objects,
+                PVOID completion_context,
+                FLT_POST_OPERATION_FLAGS flags
+        );
 
         static FLT_PREOP_CALLBACK_STATUS PreWriteOperationNoPostOperation(
-                PFLT_CALLBACK_DATA Data,
-                PCFLT_RELATED_OBJECTS FltObjects,
-                PVOID* CompletionContext
-            );
+            PFLT_CALLBACK_DATA data,
+            PCFLT_RELATED_OBJECTS flt_objects,
+            PVOID* completion_context
+        );
 
-        static NTSTATUS Unload(FLT_FILTER_UNLOAD_FLAGS Flags);
+        static NTSTATUS Unload(FLT_FILTER_UNLOAD_FLAGS flags);
+
+        static bool GetFileName(PFLT_CALLBACK_DATA data, PWCHAR name, DWORD32 size);
 
         static void SetDriverObjectPtr(const PDRIVER_OBJECT p_driver_object);
         static PDRIVER_OBJECT GetDriverObjectPtr();
