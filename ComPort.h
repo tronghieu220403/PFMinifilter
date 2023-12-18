@@ -7,11 +7,12 @@
 
 #pragma prefast(disable:__WARNING_ENCODE_MEMBER_FUNCTION_POINTER, "Not valid for kernel mode drivers")
 
-namespace communication
+namespace com
 {
 	class ComPort
 	{
 	private:
+
 		inline static PFLT_FILTER p_filter_handle_ = { 0 };
 		inline static PSECURITY_DESCRIPTOR sec_des_ = { 0 };
 		inline static PFLT_PORT server_port_ = { 0 };
@@ -21,8 +22,8 @@ namespace communication
 	public:
 
 		static NTSTATUS Create();
-		static NTSTATUS Send();
-		static NTSTATUS Revc();
+		static NTSTATUS Send(PVOID sender_buffer, ULONG sender_buffer_length);
+		// static NTSTATUS Revc();
 		static NTSTATUS Close();
 
 		static NTSTATUS ConnectHandler(
@@ -47,8 +48,8 @@ namespace communication
 		);
 
 
-		void SetPfltFilter(PFLT_FILTER p_filter_handle);
-		PFLT_FILTER GetPfltFilter() const;
+		static void SetPfltFilter(PFLT_FILTER p_filter_handle);
+		static PFLT_FILTER GetPfltFilter();
 
 	};
 }

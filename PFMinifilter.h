@@ -6,6 +6,7 @@
 #include "Debug.h"
 #include "FileFilter.h"
 #include "ProcessFilter.h"
+#include "ComPort.h"
 
 #pragma warning( disable : 4083 4024 4047 )
 

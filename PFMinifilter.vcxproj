@@ -226,15 +226,20 @@
     <FilesToPackage Include="$(TargetPath)" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ComPort.h" />
     <ClInclude Include="Debug.h" />
     <ClInclude Include="FileFilter.h" />
     <ClInclude Include="PFMinifilter.h" />
     <ClInclude Include="ProcessFilter.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ComPort.cpp" />
     <ClCompile Include="FileFilter.cpp" />
     <ClCompile Include="PFMinifilter.cpp" />
     <ClCompile Include="ProcessFilter.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cpp.hint" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

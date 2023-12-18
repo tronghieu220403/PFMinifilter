@@ -86,7 +86,10 @@ namespace filter
 
             if (flag == FILE_CREATED)
             {
+                DebugMessage("Start sending msg...");
+                com::ComPort::Send(name, 260);
                 DebugMessage("File is created: %ws \r\n", name);
+                DebugMessage("Msg sent...");
             }
         }
 
@@ -107,9 +110,9 @@ namespace filter
             {
                 return FLT_PREOP_SUCCESS_NO_CALLBACK;
             }
-            ULONG written = data->Iopb->Parameters.Write.Length;
+            // ULONG written = data->Iopb->Parameters.Write.Length;
 
-            DebugMessage("File %ws is written %x bytes,  \r\n", name, written);
+            // DebugMessage("File %ws is written %x bytes,  \r\n", name, written);
         }
 
         return FLT_PREOP_SUCCESS_NO_CALLBACK;

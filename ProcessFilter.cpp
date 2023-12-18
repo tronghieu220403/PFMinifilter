@@ -24,7 +24,6 @@ namespace filter
 		if (create)
 		{
 			PEPROCESS process = NULL;
-			// PUNICODE_STRING parentProcessName = NULL;
 			PUNICODE_STRING processName = NULL;
 
 			PsLookupProcessByProcessId(pid, &process);

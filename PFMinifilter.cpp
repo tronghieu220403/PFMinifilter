@@ -19,6 +19,9 @@ NTSTATUS DriverEntry (PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath)
         return status;
     }
     
+    com::ComPort::SetPfltFilter(filter::FileFilter::GetFilterHandle());
+    com::ComPort::Create();
+    
     status = filter::ProcessFilter::Register();
 
     if (!NT_SUCCESS(status))
@@ -34,8 +37,10 @@ NTSTATUS FilterUnload(FLT_FILTER_UNLOAD_FLAGS Flags)
     UNREFERENCED_PARAMETER(Flags);
 
     DebugMessage("Driver Unload Called \r\n");
-    filter::FileFilter::Unload();
     filter::ProcessFilter::Unload();
+    com::ComPort::Close();
+    // File Filter Unload must always at the last of the Unload rountine
+    filter::FileFilter::Unload();
     return STATUS_SUCCESS;
 }
 

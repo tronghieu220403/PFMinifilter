@@ -1,11 +1,4 @@
 // Hint files help the Visual Studio IDE interpret Visual C++ identifiers
 // such as names of functions and macros.
 // For more information see https://go.microsoft.com/fwlink/?linkid=865984
-#define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
-#define EXTERN_C_START extern "C" {
-#define EXTERN_C_END }
-#define EXTERN_C_END
-#define _Inout_ _SAL2_Source_(_Inout_, (), _Prepost_valid_)
-#define _Inout_
-#define _In_ _SAL2_Source_(_In_, (), _Pre1_impl_(__notnull_impl_notref) _Pre_valid_impl_ _Deref_pre1_impl_(__readaccess_impl_notref))
-#define _In_
+#define RTL_CONSTANT_STRING(s) { sizeof( s ) - sizeof( (s)[0] ), sizeof( s ) / sizeof(_RTL_CONSTANT_STRING_type_check(s)), _RTL_CONSTANT_STRING_remove_const_macro(s) }
