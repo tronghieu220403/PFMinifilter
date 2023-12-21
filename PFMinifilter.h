@@ -17,9 +17,11 @@ PFLT_FILTER gFilterHandle = { 0 };
 
 EXTERN_C_START
 
-NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath);
+NTSTATUS DriverEntry(PDRIVER_OBJECT driver_object, PUNICODE_STRING registry_path);
 
-NTSTATUS FilterUnload(FLT_FILTER_UNLOAD_FLAGS Flags);
+NTSTATUS FilterUnload(FLT_FILTER_UNLOAD_FLAGS flags);
+
+NTSTATUS DriverUnload(PDRIVER_OBJECT driver_object);
 
 EXTERN_C_END
 

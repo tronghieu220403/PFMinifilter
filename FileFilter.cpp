@@ -87,19 +87,18 @@ namespace filter
         return FLT_PREOP_SUCCESS_WITH_CALLBACK;
     }
 
-    FLT_POSTOP_CALLBACK_STATUS FileFilter::PostCreateOperation(PFLT_CALLBACK_DATA data, PCFLT_RELATED_OBJECTS flt_objects, PVOID completion_context, FLT_POST_OPERATION_FLAGS Flags)
+    FLT_POSTOP_CALLBACK_STATUS FileFilter::PostCreateOperation(PFLT_CALLBACK_DATA data, PCFLT_RELATED_OBJECTS flt_objects, PVOID completion_context, FLT_POST_OPERATION_FLAGS flags)
     {
         WCHAR name[260] = { 0 };
         NTSTATUS status = STATUS_SUCCESS;
         PDF_STREAM_CONTEXT stream_context = NULL;
 
-        UNREFERENCED_PARAMETER(flt_objects);
         UNREFERENCED_PARAMETER(completion_context);
-        UNREFERENCED_PARAMETER(Flags);
+        UNREFERENCED_PARAMETER(flags);
 
         PAGED_CODE();
 
-        ASSERT(!FlagOn(Flags, FLTFL_POST_OPERATION_DRAINING)); // if we are draining, stop the program
+        ASSERT(!FlagOn(flags, FLTFL_POST_OPERATION_DRAINING));
 
         // below is for file creation
 
@@ -154,7 +153,7 @@ namespace filter
         if (!NT_SUCCESS(data->IoStatus.Status))
         {
             WCHAR name[260] = { 0 };
-
+            DebugMessage("WriteOperation: before get file name, must have after");
             // if this doesn't work, we might need to save "completion_context" in pre-operation 
             if (FileFilter::GetFileName(data, name, 260) == false)
             {
@@ -172,7 +171,6 @@ namespace filter
         NTSTATUS status;
         PDF_STREAM_CONTEXT streamContext = NULL;
         BOOLEAN race;
-        WCHAR name[260] = { 0 };
 
         PAGED_CODE();
 
@@ -181,11 +179,6 @@ namespace filter
 
         case FileDispositionInformation:
         case FileDispositionInformationEx:
-            DebugMessage("A file has FileDispositionInformation(Ex)\r\n");
-            if (FileFilter::GetFileName(data, name, 260) == true)
-            {
-                DebugMessage("File %ws has FileDispositionInformation(Ex)\r\n", name);
-            }
 
             status = GetOrSetContext(flt_objects,
                 data->Iopb->TargetFileObject,
@@ -327,7 +320,6 @@ namespace filter
 
         // assert we're not draining.
         ASSERT(!FlagOn(flags, FLTFL_POST_OPERATION_DRAINING));
-
         // below is for file deletion
         
         // pass from pre-callback to post-callback
@@ -368,7 +360,7 @@ namespace filter
                 }
             }
         }
-
+        // _postcleanupexit:
         FltReleaseContext(stream_context);
 
         return FLT_POSTOP_FINISHED_PROCESSING;
