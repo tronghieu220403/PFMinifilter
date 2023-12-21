@@ -91,7 +91,7 @@ namespace filter
     {
         WCHAR name[260] = { 0 };
         NTSTATUS status = STATUS_SUCCESS;
-        PDF_STREAM_CONTEXT streamContext = NULL;
+        PDF_STREAM_CONTEXT stream_context = NULL;
 
         UNREFERENCED_PARAMETER(flt_objects);
         UNREFERENCED_PARAMETER(completion_context);
@@ -99,46 +99,38 @@ namespace filter
 
         PAGED_CODE();
 
+        ASSERT(!FlagOn(Flags, FLTFL_POST_OPERATION_DRAINING)); // if we are draining, stop the program
+
+        // below is for file creation
+
+        if (data->IoStatus.Information == FILE_CREATED)
+        {
+            if (FileFilter::GetFileName(data, name, 260) == false)
+            {
+                return FLT_POSTOP_FINISHED_PROCESSING;
+            }
+            com::ComPort::Send((PVOID)"Created: ", 260);
+            com::ComPort::Send(name, 260);
+            DebugMessage("File is created: %ws \r\n", name);
+        }
+
         if (!NT_SUCCESS(data->IoStatus.Status) ||
             (STATUS_REPARSE == data->IoStatus.Status))
         {
             return FLT_POSTOP_FINISHED_PROCESSING;
         }
-        else
-        {
-            ASSERT(!FlagOn(Flags, FLTFL_POST_OPERATION_DRAINING)); // if we are draining, stop the program
-        }
-
-        // below is for file creation
-
-        if (FileFilter::GetFileName(data, name, 260) == false)
-        {
-            return FLT_POSTOP_FINISHED_PROCESSING;
-        }
-
-        if (data->IoStatus.Information == FILE_CREATED)
-        {
-            DebugMessage("Start sending msg...");
-            com::ComPort::Send(name, 260);
-            DebugMessage("File is created: %ws \r\n", name);
-            DebugMessage("Msg sent...");
-        }
 
         // below is for file deletion
         status = GetOrSetContext(flt_objects,
             data->Iopb->TargetFileObject,
-            (PFLT_CONTEXT *)&streamContext,
+            (PFLT_CONTEXT *)&stream_context,
             FLT_STREAM_CONTEXT);
 
         if (NT_SUCCESS(status)) {
-            streamContext->DeleteOnClose = BooleanFlagOn(data->Iopb->Parameters.Create.Options,
+            stream_context->DeleteOnClose = BooleanFlagOn(data->Iopb->Parameters.Create.Options,
                 FILE_DELETE_ON_CLOSE);
+            FltReleaseContext(stream_context); // FltReleaseContext decrements the reference count on the given context. When the reference count reaches zero, if the caller is running at IRQL DISPATCH_LEVEL, a work item is scheduled to free the context.
         }
-        if (NT_SUCCESS(status)) {
-
-            FltReleaseContext(streamContext);
-        }
-
 
         return FLT_POSTOP_FINISHED_PROCESSING;
     }
@@ -180,6 +172,7 @@ namespace filter
         NTSTATUS status;
         PDF_STREAM_CONTEXT streamContext = NULL;
         BOOLEAN race;
+        WCHAR name[260] = { 0 };
 
         PAGED_CODE();
 
@@ -188,6 +181,12 @@ namespace filter
 
         case FileDispositionInformation:
         case FileDispositionInformationEx:
+            DebugMessage("A file has FileDispositionInformation(Ex)\r\n");
+            if (FileFilter::GetFileName(data, name, 260) == true)
+            {
+                DebugMessage("File %ws has FileDispositionInformation(Ex)\r\n", name);
+            }
+
             status = GetOrSetContext(flt_objects,
                 data->Iopb->TargetFileObject,
                 (PFLT_CONTEXT *)&streamContext,
@@ -199,7 +198,17 @@ namespace filter
             }
 
             race = (InterlockedIncrement(&streamContext->NumOps) > 1);
-
+            //
+            //  Race detection logic. The NumOps field in the StreamContext
+            //  counts the number of in-flight changes to delete disposition
+            //  on the stream.
+            //
+            //  If there's already some operations in flight, don't bother
+            //  doing postop. Since there will be no postop, this value won't
+            //  be decremented, staying forever 2 or more, which is one of
+            //  the conditions for checking deletion at post-cleanup.
+            //  
+            //  It means that we just log only one FileDispositionInformation or FileDispositionInformationEx
             if (!race) {
                 *completion_context = (PVOID)streamContext;
 
@@ -339,6 +348,7 @@ namespace filter
                     NULL);
                 
                 if (STATUS_FILE_DELETED == status) {
+                    DebugMessage("A file is deleted\r\n");
                     // Cons:
                     // If there are additional hard links (possible on NTFS & UDF) then the file system
                     // just only removes this name from the namespace and decrements the link count, but
@@ -639,12 +649,12 @@ namespace filter
           FLTFL_OPERATION_REGISTRATION_SKIP_PAGING_IO,
           FileFilter::PreSetInfoOperation,
           FileFilter::PostSetInfoOperation },
-        /*
+        
         { IRP_MJ_CLEANUP,
           0,
           FileFilter::PreCleanupOperation,
           FileFilter::PostCleanupOperation },
-        */
+        
         { IRP_MJ_OPERATION_END }
     };
 
