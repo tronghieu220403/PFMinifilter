@@ -344,8 +344,11 @@ namespace filter
                     // just only removes this name from the namespace and decrements the link count, but
                     // retains the file data. But in here we will count that also a file deletion and do 
                     // not handle that case.
-
-
+                    WCHAR name[260];
+                    if (FileFilter::GetFileName(data, name, 260) == true)
+                    {
+                        DebugMessage("Deleted: %ws\r\n", name);
+                    }
                 }
             }
         }
@@ -361,10 +364,9 @@ namespace filter
 
         PAGED_CODE();
 
-        ASSERT(ContextType == FLT_STREAM_CONTEXT);
+        ASSERT(context_type == FLT_STREAM_CONTEXT);
 
         if (stream_context->NameInfo != NULL) {
-
             FltReleaseFileNameInformation(stream_context->NameInfo);
             stream_context->NameInfo = NULL;
         }
@@ -384,32 +386,32 @@ namespace filter
     NTSTATUS FileFilter::GetFileNameInformation(PFLT_CALLBACK_DATA data, PDF_STREAM_CONTEXT stream_context)
     {
         NTSTATUS status;
-        PFLT_FILE_NAME_INFORMATION oldNameInfo;
-        PFLT_FILE_NAME_INFORMATION newNameInfo;
+        PFLT_FILE_NAME_INFORMATION old_name_info;
+        PFLT_FILE_NAME_INFORMATION new_name_info;
 
         PAGED_CODE();
 
         status = FltGetFileNameInformation(data,
             (FLT_FILE_NAME_OPENED |
                 FLT_FILE_NAME_QUERY_DEFAULT),
-            &newNameInfo);
+            &new_name_info);
 
         if (!NT_SUCCESS(status)) {
             return status;
         }
 
-        status = FltParseFileNameInformation(newNameInfo);
+        status = FltParseFileNameInformation(new_name_info);
 
         if (!NT_SUCCESS(status)) {
             return status;
         }
 
-        oldNameInfo = (PFLT_FILE_NAME_INFORMATION)InterlockedExchangePointer((volatile PVOID*)(&stream_context->NameInfo),
-            (PVOID)newNameInfo);
+        old_name_info = (PFLT_FILE_NAME_INFORMATION)InterlockedExchangePointer((volatile PVOID*)(&stream_context->NameInfo),
+            (PVOID)new_name_info);
 
-        if (NULL != oldNameInfo) {
+        if (NULL != old_name_info) {
 
-            FltReleaseFileNameInformation(oldNameInfo);
+            FltReleaseFileNameInformation(old_name_info);
         }
 
         return status;
@@ -631,22 +633,23 @@ namespace filter
         { IRP_MJ_WRITE,
           0,
           FileFilter::PreWriteOperation,
-          NULL },
+          FileFilter::PostWriteOperation },
 
         { IRP_MJ_OPERATION_END }
     };
 
     const FLT_CONTEXT_REGISTRATION FileFilter::contexts_[] = {
-    { FLT_STREAM_CONTEXT,
-      0,
-      (PFLT_CONTEXT_CLEANUP_CALLBACK)FileFilter::StreamContextCleanupOperation,
-      sizeof(DF_STREAM_CONTEXT),
-      FF_STREAM_CONTEXT_POOL_TAG,
-      NULL,
-      NULL,
-      NULL },
 
-    { FLT_CONTEXT_END }
+        { FLT_STREAM_CONTEXT,
+          0,
+          (PFLT_CONTEXT_CLEANUP_CALLBACK)FileFilter::StreamContextCleanupOperation,
+          sizeof(DF_STREAM_CONTEXT),
+          FF_STREAM_CONTEXT_POOL_TAG,
+          NULL,
+          NULL,
+          NULL },
+
+        { FLT_CONTEXT_END }
 
     };
 
