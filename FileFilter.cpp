@@ -221,49 +221,49 @@ namespace filter
     }
 
 
-    FLT_POSTOP_CALLBACK_STATUS FileFilter::PostSetInfoOperation(PFLT_CALLBACK_DATA Data, PCFLT_RELATED_OBJECTS FltObjects, PVOID CompletionContext, FLT_POST_OPERATION_FLAGS Flags)
+    FLT_POSTOP_CALLBACK_STATUS FileFilter::PostSetInfoOperation(PFLT_CALLBACK_DATA data, PCFLT_RELATED_OBJECTS flt_objects, PVOID completion_context, FLT_POST_OPERATION_FLAGS flags)
     {
-        PDF_STREAM_CONTEXT streamContext;
+        PDF_STREAM_CONTEXT stream_context;
 
-        UNREFERENCED_PARAMETER(FltObjects);
-        UNREFERENCED_PARAMETER(Flags);
+        UNREFERENCED_PARAMETER(flt_objects);
+        UNREFERENCED_PARAMETER(flags);
 
         PAGED_CODE();
 
         // below is for file deletion
         
-        ASSERT((Data->Iopb->Parameters.SetFileInformation.FileInformationClass == FileDispositionInformation) ||
-            (Data->Iopb->Parameters.SetFileInformation.FileInformationClass == FileDispositionInformationEx));
+        ASSERT((data->Iopb->Parameters.SetFileInformation.FileInformationClass == FileDispositionInformation) ||
+            (data->Iopb->Parameters.SetFileInformation.FileInformationClass == FileDispositionInformationEx));
 
-        ASSERT(NULL != CompletionContext);
-        streamContext = (PDF_STREAM_CONTEXT)CompletionContext;
+        ASSERT(NULL != completion_context);
+        stream_context = (PDF_STREAM_CONTEXT)completion_context;
 
-        if (NT_SUCCESS(Data->IoStatus.Status)) {
+        if (NT_SUCCESS(data->IoStatus.Status)) {
 
-            if (Data->Iopb->Parameters.SetFileInformation.FileInformationClass == FileDispositionInformationEx) {
+            if (data->Iopb->Parameters.SetFileInformation.FileInformationClass == FileDispositionInformationEx) {
 
-                ULONG flags = ((PFILE_DISPOSITION_INFORMATION_EX)Data->Iopb->Parameters.SetFileInformation.InfoBuffer)->Flags;
+                ULONG file_flags = ((PFILE_DISPOSITION_INFORMATION_EX)data->Iopb->Parameters.SetFileInformation.InfoBuffer)->Flags;
 
-                if (FlagOn(flags, FILE_DISPOSITION_ON_CLOSE)) {
+                if (FlagOn(file_flags, FILE_DISPOSITION_ON_CLOSE)) {
 
-                    streamContext->DeleteOnClose = BooleanFlagOn(flags, FILE_DISPOSITION_DELETE);
+                    stream_context->DeleteOnClose = BooleanFlagOn(file_flags, FILE_DISPOSITION_DELETE);
 
                 }
                 else {
 
-                    streamContext->SetDisp = BooleanFlagOn(flags, FILE_DISPOSITION_DELETE);
+                    stream_context->SetDisp = BooleanFlagOn(file_flags, FILE_DISPOSITION_DELETE);
                 }
 
             }
             else {
 
-                streamContext->SetDisp = ((PFILE_DISPOSITION_INFORMATION)Data->Iopb->Parameters.SetFileInformation.InfoBuffer)->DeleteFile;
+                stream_context->SetDisp = ((PFILE_DISPOSITION_INFORMATION)data->Iopb->Parameters.SetFileInformation.InfoBuffer)->DeleteFile;
             }
         }
 
-        InterlockedDecrement(&streamContext->NumOps);
+        InterlockedDecrement(&stream_context->NumOps);
 
-        FltReleaseContext(streamContext);
+        FltReleaseContext(stream_context);
 
         return FLT_POSTOP_FINISHED_PROCESSING;
     }
@@ -635,6 +635,16 @@ namespace filter
           FileFilter::PreWriteOperation,
           FileFilter::PostWriteOperation },
 
+        { IRP_MJ_SET_INFORMATION,
+          FLTFL_OPERATION_REGISTRATION_SKIP_PAGING_IO,
+          FileFilter::PreSetInfoOperation,
+          FileFilter::PostSetInfoOperation },
+        /*
+        { IRP_MJ_CLEANUP,
+          0,
+          FileFilter::PreCleanupOperation,
+          FileFilter::PostCleanupOperation },
+        */
         { IRP_MJ_OPERATION_END }
     };
 
