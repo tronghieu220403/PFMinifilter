@@ -39,6 +39,7 @@ NTSTATUS FilterUnload(FLT_FILTER_UNLOAD_FLAGS Flags)
     DebugMessage("Driver Unload Called \r\n");
     filter::ProcessFilter::Unload();
     com::ComPort::Close();
+
     // File Filter Unload must always at the last of the Unload rountine
     filter::FileFilter::Unload();
     return STATUS_SUCCESS;

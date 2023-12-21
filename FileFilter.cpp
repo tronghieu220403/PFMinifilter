@@ -1,4 +1,4 @@
-#include "FileFilter.h"
+﻿#include "FileFilter.h"
 
 namespace filter 
 {
@@ -60,6 +60,92 @@ namespace filter
 
     FLT_PREOP_CALLBACK_STATUS FileFilter::PreCreateOperation(PFLT_CALLBACK_DATA data, PCFLT_RELATED_OBJECTS flt_objects, PVOID* completion_context)
     {
+        PDF_STREAM_CONTEXT stream_context;
+        NTSTATUS status;
+
+        UNREFERENCED_PARAMETER(flt_objects);
+
+        PAGED_CODE();
+
+        // below is for file deletion
+        if (FlagOn(data->Iopb->Parameters.Create.Options, FILE_DELETE_ON_CLOSE)) {
+
+            status = AllocateContext(FLT_STREAM_CONTEXT,
+                (PFLT_CONTEXT * )&stream_context);
+
+            if (NT_SUCCESS(status)) {
+
+                *completion_context = (PVOID)stream_context;
+
+                return FLT_PREOP_SYNCHRONIZE;
+
+            }
+        }
+
+        *completion_context = NULL;
+
+        return FLT_PREOP_SUCCESS_WITH_CALLBACK;
+    }
+
+    FLT_POSTOP_CALLBACK_STATUS FileFilter::PostCreateOperation(PFLT_CALLBACK_DATA data, PCFLT_RELATED_OBJECTS flt_objects, PVOID completion_context, FLT_POST_OPERATION_FLAGS Flags)
+    {
+        WCHAR name[260] = { 0 };
+        NTSTATUS status = STATUS_SUCCESS;
+        PDF_STREAM_CONTEXT streamContext = NULL;
+
+        UNREFERENCED_PARAMETER(flt_objects);
+        UNREFERENCED_PARAMETER(completion_context);
+        UNREFERENCED_PARAMETER(Flags);
+
+        PAGED_CODE();
+
+        if (!NT_SUCCESS(data->IoStatus.Status) ||
+            (STATUS_REPARSE == data->IoStatus.Status))
+        {
+            return FLT_POSTOP_FINISHED_PROCESSING;
+        }
+        else
+        {
+            ASSERT(!FlagOn(Flags, FLTFL_POST_OPERATION_DRAINING)); // if we are draining, stop the program
+        }
+
+        // below is for file creation
+
+        if (FileFilter::GetFileName(data, name, 260) == false)
+        {
+            return FLT_POSTOP_FINISHED_PROCESSING;
+        }
+
+        if (data->IoStatus.Information == FILE_CREATED)
+        {
+            DebugMessage("Start sending msg...");
+            com::ComPort::Send(name, 260);
+            DebugMessage("File is created: %ws \r\n", name);
+            DebugMessage("Msg sent...");
+        }
+
+        // below is for file deletion
+        status = GetOrSetContext(flt_objects,
+            data->Iopb->TargetFileObject,
+            (PFLT_CONTEXT *)&streamContext,
+            FLT_STREAM_CONTEXT);
+
+        if (NT_SUCCESS(status)) {
+            streamContext->DeleteOnClose = BooleanFlagOn(data->Iopb->Parameters.Create.Options,
+                FILE_DELETE_ON_CLOSE);
+        }
+        if (NT_SUCCESS(status)) {
+
+            FltReleaseContext(streamContext);
+        }
+
+
+        return FLT_POSTOP_FINISHED_PROCESSING;
+    }
+
+    FLT_PREOP_CALLBACK_STATUS FileFilter::PreWriteOperation(PFLT_CALLBACK_DATA data, PCFLT_RELATED_OBJECTS flt_objects, PVOID* completion_context)
+    {
+        // Write here
         UNREFERENCED_PARAMETER(data);
         UNREFERENCED_PARAMETER(flt_objects);
         UNREFERENCED_PARAMETER(completion_context);
@@ -67,55 +153,221 @@ namespace filter
         return FLT_PREOP_SUCCESS_WITH_CALLBACK;
     }
 
-    FLT_POSTOP_CALLBACK_STATUS FileFilter::PostCreateOperation(PFLT_CALLBACK_DATA data, PCFLT_RELATED_OBJECTS flt_objects, PVOID completion_context, FLT_POST_OPERATION_FLAGS Flags)
+    FLT_POSTOP_CALLBACK_STATUS FileFilter::PostWriteOperation(PFLT_CALLBACK_DATA data, PCFLT_RELATED_OBJECTS flt_objects, PVOID completion_context, FLT_POST_OPERATION_FLAGS flags)
     {
-
         UNREFERENCED_PARAMETER(flt_objects);
         UNREFERENCED_PARAMETER(completion_context);
-        UNREFERENCED_PARAMETER(Flags);
+        UNREFERENCED_PARAMETER(flags);
 
-        if (data && data->Iopb && data->Iopb->MajorFunction == IRP_MJ_CREATE)
+        if (!NT_SUCCESS(data->IoStatus.Status))
         {
             WCHAR name[260] = { 0 };
 
+            // if this doesn't work, we might need to save "completion_context" in pre-operation 
             if (FileFilter::GetFileName(data, name, 260) == false)
             {
                 return FLT_POSTOP_FINISHED_PROCESSING;
             }
-            UINT64 flag = data->IoStatus.Information;
-
-            if (flag == FILE_CREATED)
-            {
-                DebugMessage("Start sending msg...");
-                com::ComPort::Send(name, 260);
-                DebugMessage("File is created: %ws \r\n", name);
-                DebugMessage("Msg sent...");
-            }
+            ULONG written = data->Iopb->Parameters.Write.Length;
+            DebugMessage("File %ws is written %x bytes,  \r\n", name, written);
         }
 
         return FLT_POSTOP_FINISHED_PROCESSING;
     }
 
-    FLT_PREOP_CALLBACK_STATUS FileFilter::PreWriteOperationNoPostOperation(PFLT_CALLBACK_DATA data, PCFLT_RELATED_OBJECTS flt_objects, PVOID* completion_context)
+    FLT_PREOP_CALLBACK_STATUS FileFilter::PreSetInfoOperation(PFLT_CALLBACK_DATA data, PCFLT_RELATED_OBJECTS flt_objects, PVOID* completion_context)
     {
-        // Write here
-        UNREFERENCED_PARAMETER(flt_objects);
-        UNREFERENCED_PARAMETER(completion_context);
+        NTSTATUS status;
+        PDF_STREAM_CONTEXT streamContext = NULL;
+        BOOLEAN race;
 
-        if (data && data->Iopb && data->Iopb->MajorFunction == IRP_MJ_WRITE)
-        {
-            WCHAR name[260] = { 0 };
+        PAGED_CODE();
 
-            if (FileFilter::GetFileName(data, name, 260) == false)
-            {
+        // below is for file deletion
+        switch (data->Iopb->Parameters.SetFileInformation.FileInformationClass) {
+
+        case FileDispositionInformation:
+        case FileDispositionInformationEx:
+            status = GetOrSetContext(flt_objects,
+                data->Iopb->TargetFileObject,
+                (PFLT_CONTEXT *)&streamContext,
+                FLT_STREAM_CONTEXT);
+
+            if (!NT_SUCCESS(status)) {
+
                 return FLT_PREOP_SUCCESS_NO_CALLBACK;
             }
-            // ULONG written = data->Iopb->Parameters.Write.Length;
 
-            // DebugMessage("File %ws is written %x bytes,  \r\n", name, written);
+            race = (InterlockedIncrement(&streamContext->NumOps) > 1);
+
+            if (!race) {
+                *completion_context = (PVOID)streamContext;
+
+                return FLT_PREOP_SYNCHRONIZE;
+            }
+            else {
+
+                FltReleaseContext(streamContext);
+            }
+
+            // FALL_THROUGH
+
+        default:
+
+            return FLT_PREOP_SUCCESS_NO_CALLBACK;
+
+            break;
+        }
+    }
+
+
+    FLT_POSTOP_CALLBACK_STATUS FileFilter::PostSetInfoOperation(PFLT_CALLBACK_DATA Data, PCFLT_RELATED_OBJECTS FltObjects, PVOID CompletionContext, FLT_POST_OPERATION_FLAGS Flags)
+    {
+        PDF_STREAM_CONTEXT streamContext;
+
+        UNREFERENCED_PARAMETER(FltObjects);
+        UNREFERENCED_PARAMETER(Flags);
+
+        PAGED_CODE();
+
+        // below is for file deletion
+        
+        ASSERT((Data->Iopb->Parameters.SetFileInformation.FileInformationClass == FileDispositionInformation) ||
+            (Data->Iopb->Parameters.SetFileInformation.FileInformationClass == FileDispositionInformationEx));
+
+        ASSERT(NULL != CompletionContext);
+        streamContext = (PDF_STREAM_CONTEXT)CompletionContext;
+
+        if (NT_SUCCESS(Data->IoStatus.Status)) {
+
+            if (Data->Iopb->Parameters.SetFileInformation.FileInformationClass == FileDispositionInformationEx) {
+
+                ULONG flags = ((PFILE_DISPOSITION_INFORMATION_EX)Data->Iopb->Parameters.SetFileInformation.InfoBuffer)->Flags;
+
+                if (FlagOn(flags, FILE_DISPOSITION_ON_CLOSE)) {
+
+                    streamContext->DeleteOnClose = BooleanFlagOn(flags, FILE_DISPOSITION_DELETE);
+
+                }
+                else {
+
+                    streamContext->SetDisp = BooleanFlagOn(flags, FILE_DISPOSITION_DELETE);
+                }
+
+            }
+            else {
+
+                streamContext->SetDisp = ((PFILE_DISPOSITION_INFORMATION)Data->Iopb->Parameters.SetFileInformation.InfoBuffer)->DeleteFile;
+            }
+        }
+
+        InterlockedDecrement(&streamContext->NumOps);
+
+        FltReleaseContext(streamContext);
+
+        return FLT_POSTOP_FINISHED_PROCESSING;
+    }
+
+    FLT_PREOP_CALLBACK_STATUS FileFilter::PreCleanupOperation(PFLT_CALLBACK_DATA data, PCFLT_RELATED_OBJECTS flt_objects, PVOID* completion_context)
+    {
+        PDF_STREAM_CONTEXT stream_context;
+        NTSTATUS status;
+
+        UNREFERENCED_PARAMETER(flt_objects);
+
+        PAGED_CODE();
+
+        status = FltGetStreamContext(data->Iopb->TargetInstance,
+            data->Iopb->TargetFileObject,
+            (PFLT_CONTEXT *)&stream_context);
+
+        if (NT_SUCCESS(status)) {
+
+            status = GetFileNameInformation(data, stream_context);
+
+            if (NT_SUCCESS(status)) {
+
+                // pass from pre-callback to post-callback
+                *completion_context = (PVOID)stream_context;
+
+                return FLT_PREOP_SYNCHRONIZE;
+
+            }
+            else {
+
+                FltReleaseContext(stream_context);
+            }
         }
 
         return FLT_PREOP_SUCCESS_NO_CALLBACK;
+    }
+
+    FLT_POSTOP_CALLBACK_STATUS FileFilter::PostCleanupOperation(PFLT_CALLBACK_DATA data, PCFLT_RELATED_OBJECTS flt_objects, PVOID completion_context, FLT_POST_OPERATION_FLAGS flags)
+    {
+        UNREFERENCED_PARAMETER(flt_objects);
+        UNREFERENCED_PARAMETER(flags);
+
+        FILE_STANDARD_INFORMATION file_info;
+        PDF_STREAM_CONTEXT stream_context = NULL;
+        NTSTATUS status;
+
+        UNREFERENCED_PARAMETER(completion_context);
+
+        UNREFERENCED_PARAMETER(flags);
+
+        PAGED_CODE();
+
+        // assert we're not draining.
+        ASSERT(!FlagOn(flags, FLTFL_POST_OPERATION_DRAINING));
+
+        // below is for file deletion
+        
+        // pass from pre-callback to post-callback
+        ASSERT(NULL != completion_context);
+        stream_context = (PDF_STREAM_CONTEXT)completion_context;
+
+        if (NT_SUCCESS(data->IoStatus.Status)) {
+            if (((stream_context->NumOps > 0) ||
+                (stream_context->SetDisp) ||
+                (stream_context->DeleteOnClose)) &&
+                (0 == stream_context->IsNotified)) {
+                status = FltQueryInformationFile(data->Iopb->TargetInstance,
+                    data->Iopb->TargetFileObject,
+                    &file_info,
+                    sizeof(file_info),
+                    FileStandardInformation,
+                    NULL);
+                
+                if (STATUS_FILE_DELETED == status) {
+                    // Cons:
+                    // If there are additional hard links (possible on NTFS & UDF) then the file system
+                    // just only removes this name from the namespace and decrements the link count, but
+                    // retains the file data. But in here we will count that also a file deletion and do 
+                    // not handle that case.
+
+
+                }
+            }
+        }
+
+        FltReleaseContext(stream_context);
+
+        return FLT_POSTOP_FINISHED_PROCESSING;
+    }
+
+    void FileFilter::StreamContextCleanupOperation(PDF_STREAM_CONTEXT stream_context, FLT_CONTEXT_TYPE context_type)
+    {
+        UNREFERENCED_PARAMETER(context_type);
+
+        PAGED_CODE();
+
+        ASSERT(ContextType == FLT_STREAM_CONTEXT);
+
+        if (stream_context->NameInfo != NULL) {
+
+            FltReleaseFileNameInformation(stream_context->NameInfo);
+            stream_context->NameInfo = NULL;
+        }
     }
 
     NTSTATUS FileFilter::Unload()
@@ -127,6 +379,172 @@ namespace filter
             g_filter_handle_ = NULL;
         }
         return STATUS_SUCCESS;
+    }
+
+    NTSTATUS FileFilter::GetFileNameInformation(PFLT_CALLBACK_DATA data, PDF_STREAM_CONTEXT stream_context)
+    {
+        NTSTATUS status;
+        PFLT_FILE_NAME_INFORMATION oldNameInfo;
+        PFLT_FILE_NAME_INFORMATION newNameInfo;
+
+        PAGED_CODE();
+
+        status = FltGetFileNameInformation(data,
+            (FLT_FILE_NAME_OPENED |
+                FLT_FILE_NAME_QUERY_DEFAULT),
+            &newNameInfo);
+
+        if (!NT_SUCCESS(status)) {
+            return status;
+        }
+
+        status = FltParseFileNameInformation(newNameInfo);
+
+        if (!NT_SUCCESS(status)) {
+            return status;
+        }
+
+        oldNameInfo = (PFLT_FILE_NAME_INFORMATION)InterlockedExchangePointer((volatile PVOID*)(&stream_context->NameInfo),
+            (PVOID)newNameInfo);
+
+        if (NULL != oldNameInfo) {
+
+            FltReleaseFileNameInformation(oldNameInfo);
+        }
+
+        return status;
+    }
+
+    NTSTATUS FileFilter::AllocateContext(FLT_CONTEXT_TYPE context_type, PFLT_CONTEXT* context)
+    {
+        NTSTATUS status;
+
+        PAGED_CODE();
+
+        switch (context_type) {
+
+        case FLT_STREAM_CONTEXT:
+
+            status = FltAllocateContext(FileFilter::g_filter_handle_,
+                FLT_STREAM_CONTEXT,
+                sizeof(DF_STREAM_CONTEXT),
+                FF_CONTEXT_POOL_TYPE,
+                context);
+
+            if (NT_SUCCESS(status)) {
+                RtlZeroMemory(*context, sizeof(DF_STREAM_CONTEXT));
+            }
+
+            return status;
+
+        default:
+
+            return STATUS_INVALID_PARAMETER;
+        }
+    }
+
+    NTSTATUS FileFilter::SetContext(PCFLT_RELATED_OBJECTS flt_objects, PVOID target, FLT_CONTEXT_TYPE context_type, PFLT_CONTEXT new_context, PFLT_CONTEXT* old_context)
+    {
+        PAGED_CODE();
+
+        switch (context_type) {
+
+        case FLT_STREAM_CONTEXT:
+
+            return FltSetStreamContext(flt_objects->Instance,
+                (PFILE_OBJECT)target,
+                FLT_SET_CONTEXT_KEEP_IF_EXISTS,
+                new_context,
+                old_context);
+
+        default:
+
+            ASSERT(!"Unexpected context type!\n");
+
+            return STATUS_INVALID_PARAMETER;
+        }
+    }
+
+    NTSTATUS FileFilter::GetContext(PCFLT_RELATED_OBJECTS flt_objects, PVOID target, FLT_CONTEXT_TYPE context_type, PFLT_CONTEXT* context)
+    {
+        PAGED_CODE();
+
+        switch (context_type) {
+
+        case FLT_STREAM_CONTEXT:
+
+            return FltGetStreamContext(flt_objects->Instance,
+                (PFILE_OBJECT)target,
+                context);
+            
+        default:
+            break;
+        }
+
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    NTSTATUS FileFilter::GetOrSetContext(PCFLT_RELATED_OBJECTS flt_objects, PVOID target, PFLT_CONTEXT* context, FLT_CONTEXT_TYPE context_type)
+    {
+        NTSTATUS status;
+        PFLT_CONTEXT new_context;
+        PFLT_CONTEXT old_context;
+
+        PAGED_CODE();
+
+        ASSERT(NULL != context);
+
+        new_context = *context;
+
+        status = GetContext(flt_objects,
+            target,
+            context_type,
+            &old_context);
+
+        if (STATUS_NOT_FOUND == status) {
+            if (NULL == new_context) {
+                status = AllocateContext(context_type, &new_context);
+                if (!NT_SUCCESS(status)) {
+                    return status;
+                }
+            }
+        }
+        else if (!NT_SUCCESS(status)) {
+            return status;
+        }
+        else {
+            ASSERT(new_context != old_context);
+
+            if (NULL != new_context) {
+
+                FltReleaseContext(new_context);
+            }
+
+            *context = old_context;
+            return status;
+        }
+
+        status = SetContext(flt_objects,
+            target,
+            context_type,
+            new_context,
+            &old_context);
+
+        if (!NT_SUCCESS(status)) {
+            FltReleaseContext(new_context);
+
+            if (STATUS_FLT_CONTEXT_ALREADY_DEFINED == status) {
+                *context = old_context;
+                return STATUS_SUCCESS;
+            }
+            else {
+                *context = NULL;
+                return status;
+            }
+        }
+
+        *context = new_context;
+        return status;
     }
 
     bool FileFilter::GetFileName(PFLT_CALLBACK_DATA data, PWCHAR name, DWORD32 size)
@@ -212,22 +630,36 @@ namespace filter
 
         { IRP_MJ_WRITE,
           0,
-          FileFilter::PreWriteOperationNoPostOperation,
+          FileFilter::PreWriteOperation,
           NULL },
 
         { IRP_MJ_OPERATION_END }
     };
 
-    const FLT_REGISTRATION FileFilter::filter_registration_ = 
+    const FLT_CONTEXT_REGISTRATION FileFilter::contexts_[] = {
+    { FLT_STREAM_CONTEXT,
+      0,
+      (PFLT_CONTEXT_CLEANUP_CALLBACK)FileFilter::StreamContextCleanupOperation,
+      sizeof(DF_STREAM_CONTEXT),
+      FF_STREAM_CONTEXT_POOL_TAG,
+      NULL,
+      NULL,
+      NULL },
+
+    { FLT_CONTEXT_END }
+
+    };
+
+    const FLT_REGISTRATION FileFilter::filter_registration_ =
     {
         sizeof(FLT_REGISTRATION),
         FLT_REGISTRATION_VERSION,
-        0,                                  //  Flags
+        0,                                  //  flags
 
-        NULL,                               //  Context
+        FileFilter::contexts_,                          //  Context
         FileFilter::callbacks_,                         //  Operation callbacks
 
-        (PFLT_FILTER_UNLOAD_CALLBACK)::FilterUnload, //  MiniFilterUnload
+        (PFLT_FILTER_UNLOAD_CALLBACK)::FilterUnload,    //  MiniFilterUnload
 
         NULL,
         NULL,
@@ -237,5 +669,6 @@ namespace filter
         NULL,
         NULL
     };
+
 }
 
