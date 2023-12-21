@@ -38,7 +38,7 @@ NTSTATUS FilterUnload(FLT_FILTER_UNLOAD_FLAGS Flags)
 {
     UNREFERENCED_PARAMETER(Flags);
 
-    DebugMessage("Driver Unload Called \r\n");
+    DebugMessage("MiniFilterUnload: Called\r\n");
     filter::ProcessFilter::Unload();
     com::ComPort::Close();
 

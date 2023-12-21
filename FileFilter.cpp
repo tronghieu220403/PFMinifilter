@@ -296,12 +296,6 @@ namespace filter
 
             if (NT_SUCCESS(status)) {
 
-                WCHAR name[260];
-                if (FileFilter::GetFileName(data, name, 260) == true)
-                {
-                    DebugMessage("A file prepare for deletion: %ws\r\n", name);
-                }
-
                 // pass from pre-callback to post-callback
                 *completion_context = (PVOID)stream_context;
                 return FLT_PREOP_SYNCHRONIZE;
@@ -345,6 +339,7 @@ namespace filter
                 (stream_context->SetDisp) ||
                 (stream_context->DeleteOnClose)) &&
                 (0 == stream_context->IsNotified)) {
+
                 status = FltQueryInformationFile(data->Iopb->TargetInstance,
                     data->Iopb->TargetFileObject,
                     &file_info,
@@ -353,17 +348,23 @@ namespace filter
                     NULL);
                 
                 if (STATUS_FILE_DELETED == status) {
-                    DebugMessage("A file is deleted\r\n");
                     // Cons:
                     // If there are additional hard links (possible on NTFS & UDF) then the file system
                     // just only removes this name from the namespace and decrements the link count, but
                     // retains the file data. But in here we will count that also a file deletion and do 
                     // not handle that case.
-                    WCHAR name[260];
-                    if (FileFilter::GetFileName(data, name, 260) == true)
+
+                    if (stream_context->NameInfo->Name.MaximumLength > 0 && 
+                        stream_context->NameInfo->Name.Length > 0 && 
+                        stream_context->NameInfo->Name.Buffer != NULL)
                     {
-                        DebugMessage("Deleted: %ws\r\n", name);
+                        DebugMessage("A file is deleted with context (%p), name %ws \r\n", stream_context, stream_context->NameInfo->Name.Buffer);
                     }
+                    else
+                    {
+                        DebugMessage("A file is deleted with context (%p), without name \r\n", stream_context);
+                    }
+                    InterlockedIncrement((volatile LONG *)&(stream_context->IsNotified));
                 }
             }
         }
