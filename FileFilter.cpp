@@ -296,9 +296,14 @@ namespace filter
 
             if (NT_SUCCESS(status)) {
 
+                WCHAR name[260];
+                if (FileFilter::GetFileName(data, name, 260) == true)
+                {
+                    DebugMessage("A file prepare for deletion: %ws\r\n", name);
+                }
+
                 // pass from pre-callback to post-callback
                 *completion_context = (PVOID)stream_context;
-
                 return FLT_PREOP_SYNCHRONIZE;
 
             }
@@ -384,7 +389,7 @@ namespace filter
 
     NTSTATUS FileFilter::Unload()
     {
-        DebugMessage("Unload File Filter");
+        DebugMessage("FileFilter Unload: Entered");
         if (g_filter_handle_ != NULL)
         {
             FltUnregisterFilter(g_filter_handle_);

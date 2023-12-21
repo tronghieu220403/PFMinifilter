@@ -4,6 +4,8 @@ NTSTATUS DriverEntry (PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath)
 {
     NTSTATUS status = STATUS_SUCCESS;
 
+    ExInitializeDriverRuntime(DrvRtPoolNxOptIn);
+
     UNREFERENCED_PARAMETER( RegistryPath );
     DebugMessage("PFMinifilter!DriverEntry: Entered\n");
 
