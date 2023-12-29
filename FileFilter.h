@@ -21,30 +21,12 @@ namespace filter
     #define FF_CONTEXT_POOL_TYPE            PagedPool
     #define FF_STREAM_CONTEXT_POOL_TAG      'xSfD'
 
-    typedef union _DF_FILE_REFERENCE {
-
-        struct {
-            ULONGLONG   Value;          //  The 64-bit file ID lives here.
-            ULONGLONG   UpperZeroes;    //  In a 64-bit file ID this will be 0.
-        } FileId64;
-        UCHAR           FileId128[16];  //  The 128-bit file ID lives here.
-
-    } DF_FILE_REFERENCE, * PDF_FILE_REFERENCE;
-
-    #define DfSizeofFileId(FID) (               \
-                ((FID).FileId64.UpperZeroes == 0ll) ?   \
-                    sizeof((FID).FileId64.Value)    :   \
-                    sizeof((FID).FileId128)             \
-                )
-
     typedef struct _DF_STREAM_CONTEXT {
-        PFLT_FILE_NAME_INFORMATION  NameInfo;
-        DF_FILE_REFERENCE           FileId;
-        volatile LONG               NumOps; //  Number of SetDisp operations in flight.
-        volatile LONG               IsNotified; //  IsNotified == 1 means a file/stream deletion was already notified.
-        BOOLEAN                     FileIdSet; //  Whether or not we've already queried the file ID.
-        BOOLEAN                     SetDisp; //  Delete Disposition for this stream.
-        BOOLEAN                     DeleteOnClose; //  Delete-on-Close state for this stream.
+        PFLT_FILE_NAME_INFORMATION  name_info;
+        volatile LONG               num_ops; //  Number of set_disp operations in flight.
+        volatile LONG               is_notified; //  is_notified == 1 means a file/stream deletion was already notified.
+        BOOLEAN                     set_disp; //  Delete Disposition for this stream.
+        BOOLEAN                     delete_on_close; //  Delete-on-Close state for this stream.
     } DF_STREAM_CONTEXT, * PDF_STREAM_CONTEXT;
 
     class FileFilter

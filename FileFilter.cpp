@@ -111,7 +111,7 @@ namespace filter
             }
             // DebugMessage("File is created: %ws \r\n", name);
 
-            if (RtlStringCchPrintfW(msg, 500, L"File is created: %ws \r\n", name) == STATUS_SUCCESS);
+            if (RtlStringCchPrintfW(msg, 500, L"File is created: %ws \r\n", name) == STATUS_SUCCESS)
             {
                 // DebugMessage("Sending msg");
                 com::ComPort::Send(msg, 500 * sizeof(WCHAR));
@@ -132,7 +132,7 @@ namespace filter
             FLT_STREAM_CONTEXT);
 
         if (NT_SUCCESS(status)) {
-            stream_context->DeleteOnClose = BooleanFlagOn(data->Iopb->Parameters.Create.Options,
+            stream_context->delete_on_close = BooleanFlagOn(data->Iopb->Parameters.Create.Options,
                 FILE_DELETE_ON_CLOSE);
             FltReleaseContext(stream_context); // FltReleaseContext decrements the reference count on the given context. When the reference count reaches zero, if the caller is running at IRQL DISPATCH_LEVEL, a work item is scheduled to free the context.
         }
@@ -172,7 +172,7 @@ namespace filter
 
             // DebugMessage("File %ws is written %x bytes,  \r\n", name, written);
             
-            if (RtlStringCchPrintfW(msg, 500, L"File %ws is written %x bytes,  \r\n", name, written) == STATUS_SUCCESS);
+            if (RtlStringCchPrintfW(msg, 500, L"File %ws is written %x bytes,  \r\n", name, written) == STATUS_SUCCESS)
             {
                 // DebugMessage("Sending msg");
                 com::ComPort::Send(msg, 500 * sizeof(WCHAR));
@@ -208,9 +208,9 @@ namespace filter
                 return FLT_PREOP_SUCCESS_NO_CALLBACK;
             }
 
-            race = (InterlockedIncrement(&streamContext->NumOps) > 1);
+            race = (InterlockedIncrement(&streamContext->num_ops) > 1);
             //
-            //  Race detection logic. The NumOps field in the StreamContext
+            //  Race detection logic. The num_ops field in the StreamContext
             //  counts the number of in-flight changes to delete disposition
             //  on the stream.
             //
@@ -266,22 +266,22 @@ namespace filter
 
                 if (FlagOn(file_flags, FILE_DISPOSITION_ON_CLOSE)) {
 
-                    stream_context->DeleteOnClose = BooleanFlagOn(file_flags, FILE_DISPOSITION_DELETE);
+                    stream_context->delete_on_close = BooleanFlagOn(file_flags, FILE_DISPOSITION_DELETE);
 
                 }
                 else {
 
-                    stream_context->SetDisp = BooleanFlagOn(file_flags, FILE_DISPOSITION_DELETE);
+                    stream_context->set_disp = BooleanFlagOn(file_flags, FILE_DISPOSITION_DELETE);
                 }
 
             }
             else {
 
-                stream_context->SetDisp = ((PFILE_DISPOSITION_INFORMATION)data->Iopb->Parameters.SetFileInformation.InfoBuffer)->DeleteFile;
+                stream_context->set_disp = ((PFILE_DISPOSITION_INFORMATION)data->Iopb->Parameters.SetFileInformation.InfoBuffer)->DeleteFile;
             }
         }
 
-        InterlockedDecrement(&stream_context->NumOps);
+        InterlockedDecrement(&stream_context->num_ops);
 
         FltReleaseContext(stream_context);
 
@@ -346,10 +346,10 @@ namespace filter
         stream_context = (PDF_STREAM_CONTEXT)completion_context;
 
         if (NT_SUCCESS(data->IoStatus.Status)) {
-            if (((stream_context->NumOps > 0) ||
-                (stream_context->SetDisp) ||
-                (stream_context->DeleteOnClose)) &&
-                (0 == stream_context->IsNotified)) {
+            if (((stream_context->num_ops > 0) ||
+                (stream_context->set_disp) ||
+                (stream_context->delete_on_close)) &&
+                (0 == stream_context->is_notified)) {
 
                 status = FltQueryInformationFile(data->Iopb->TargetInstance,
                     data->Iopb->TargetFileObject,
@@ -365,13 +365,13 @@ namespace filter
                     // retains the file data. But in here we will count that also a file deletion and do 
                     // not handle that case.
 
-                    if (stream_context->NameInfo->Name.MaximumLength > 0 && 
-                        stream_context->NameInfo->Name.Length > 0 && 
-                        stream_context->NameInfo->Name.Buffer != NULL)
+                    if (stream_context->name_info->Name.MaximumLength > 0 && 
+                        stream_context->name_info->Name.Length > 0 && 
+                        stream_context->name_info->Name.Buffer != NULL)
                     {
-                        // DebugMessage("A file is deleted with context (%p), name %ws \r\n", stream_context, stream_context->NameInfo->Name.Buffer);
+                        // DebugMessage("A file is deleted with context (%p), name %ws \r\n", stream_context, stream_context->name_info->Name.Buffer);
 
-                        if (RtlStringCchPrintfW(msg, 500, L"A file is deleted with context (%p), name %ws \r\n", stream_context, stream_context->NameInfo->Name.Buffer) == STATUS_SUCCESS);
+                        if (RtlStringCchPrintfW(msg, 500, L"A file is deleted with context (%p), name %ws \r\n", stream_context, stream_context->name_info->Name.Buffer) == STATUS_SUCCESS)
                         {
                             // DebugMessage("Sending msg");
                             com::ComPort::Send(msg, 500 * sizeof(WCHAR));
@@ -382,7 +382,7 @@ namespace filter
                     else
                     {
                         // DebugMessage("A file is deleted with context (%p), without name \r\n", stream_context);
-                        if (RtlStringCchPrintfW(msg, 500, L"A file is deleted with context (%p), without name \r\n", stream_context) == STATUS_SUCCESS);
+                        if (RtlStringCchPrintfW(msg, 500, L"A file is deleted with context (%p), without name \r\n", stream_context) == STATUS_SUCCESS)
                         {
                             // DebugMessage("Sending msg");
                             com::ComPort::Send(msg, 500 * sizeof(WCHAR));
@@ -390,7 +390,7 @@ namespace filter
                         }
 
                     }
-                    InterlockedIncrement((volatile LONG *)&(stream_context->IsNotified));
+                    InterlockedIncrement((volatile LONG *)&(stream_context->is_notified));
                 }
             }
         }
@@ -408,9 +408,9 @@ namespace filter
 
         ASSERT(context_type == FLT_STREAM_CONTEXT);
 
-        if (stream_context->NameInfo != NULL) {
-            FltReleaseFileNameInformation(stream_context->NameInfo);
-            stream_context->NameInfo = NULL;
+        if (stream_context->name_info != NULL) {
+            FltReleaseFileNameInformation(stream_context->name_info);
+            stream_context->name_info = NULL;
         }
     }
 
@@ -448,7 +448,7 @@ namespace filter
             return status;
         }
 
-        old_name_info = (PFLT_FILE_NAME_INFORMATION)InterlockedExchangePointer((volatile PVOID*)(&stream_context->NameInfo),
+        old_name_info = (PFLT_FILE_NAME_INFORMATION)InterlockedExchangePointer((volatile PVOID*)(&stream_context->name_info),
             (PVOID)new_name_info);
 
         if (NULL != old_name_info) {

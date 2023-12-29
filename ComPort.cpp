@@ -69,7 +69,7 @@ namespace com
 
 		client_port_= client_port;
 
-		DebugMessage("Connected");
+		// DebugMessage("Connected");
 
 		return STATUS_SUCCESS;
 	}
@@ -80,7 +80,7 @@ namespace com
 
 		FltCloseClientPort(p_filter_handle_, &client_port_);
 
-		DebugMessage("Disonnected");
+		// DebugMessage("Disonnected");
 
 		return;
 	}
@@ -132,7 +132,7 @@ namespace com
 		}
 
 		PCHAR msg = (char *)"kernel msg";
-		DebugMessage("user msg is : % s \r\n", (PCHAR)input_buffer);
+		// DebugMessage("user msg is : % s \r\n", (PCHAR)input_buffer);
 
 		RtlCopyMemory(&output_buffer, msg, sizeof(msg));
 		*/

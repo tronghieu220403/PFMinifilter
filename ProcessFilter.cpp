@@ -25,19 +25,19 @@ namespace filter
 		if (create)
 		{
 			PEPROCESS process = NULL;
-			PUNICODE_STRING processName = NULL;
+			PUNICODE_STRING process_name = NULL;
 
 			PsLookupProcessByProcessId(pid, &process);
-			SeLocateProcessImageName(process, &processName);
+			SeLocateProcessImageName(process, &process_name);
 
-			if (RtlStringCchPrintfW(msg, 500, L"Process %d is created with name: %wZ", (int)pid, processName) == STATUS_SUCCESS);
+			if (RtlStringCchPrintfW(msg, 500, L"Process %d is created with name: %wZ", (int)pid, process_name) == STATUS_SUCCESS)
 			{
 				// DebugMessage("Sending msg");
 				com::ComPort::Send(msg, 500 * sizeof(WCHAR));
 				// DebugMessage("Sent msg");
 			}
 
-			// DebugMessage("Process %d is created with name: %wZ", (int)pid, processName);
+			// DebugMessage("Process %d is created with name: %wZ", (int)pid, process_name);
 		}
 		else
 		{
