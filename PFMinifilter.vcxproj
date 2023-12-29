@@ -231,12 +231,15 @@
     <ClInclude Include="FileFilter.h" />
     <ClInclude Include="PFMinifilter.h" />
     <ClInclude Include="ProcessFilter.h" />
+    <ClInclude Include="Ulti.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ComPort.cpp" />
+    <ClCompile Include="Debug.cpp" />
     <ClCompile Include="FileFilter.cpp" />
     <ClCompile Include="PFMinifilter.cpp" />
     <ClCompile Include="ProcessFilter.cpp" />
+    <ClCompile Include="Ulti.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

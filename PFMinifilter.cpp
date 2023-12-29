@@ -7,7 +7,7 @@ NTSTATUS DriverEntry (PDRIVER_OBJECT driver_object, PUNICODE_STRING registry_pat
     ExInitializeDriverRuntime(DrvRtPoolNxOptIn);
 
     UNREFERENCED_PARAMETER( registry_path );
-    DebugMessage("PFMinifilter!DriverEntry: Entered\n");
+    // DebugMessage("PFMinifilter!DriverEntry: Entered\n");
 
     driver_object->DriverUnload = (PDRIVER_UNLOAD)DriverUnload;
 
@@ -19,7 +19,7 @@ NTSTATUS DriverEntry (PDRIVER_OBJECT driver_object, PUNICODE_STRING registry_pat
 
     if (!NT_SUCCESS(status))
     {
-        DebugMessage("FileFilter: Register not successfull\n");
+        // DebugMessage("FileFilter: Register not successfull\n");
         return STATUS_UNSUCCESSFUL;
     }
     
@@ -30,7 +30,7 @@ NTSTATUS DriverEntry (PDRIVER_OBJECT driver_object, PUNICODE_STRING registry_pat
 
     if (!NT_SUCCESS(status))
     {
-        DebugMessage("ProcessFilter: Register not successfull\n");
+        // DebugMessage("ProcessFilter: Register not successfull\n");
         return STATUS_UNSUCCESSFUL;
     }
 
@@ -41,7 +41,7 @@ NTSTATUS FilterUnload(FLT_FILTER_UNLOAD_FLAGS flags)
 {
     UNREFERENCED_PARAMETER(flags);
 
-    DebugMessage("MiniFilterUnload: Entered\r\n");
+    // DebugMessage("MiniFilterUnload: Entered\r\n");
     filter::ProcessFilter::Unload();
     com::ComPort::Close();
 
@@ -53,6 +53,6 @@ NTSTATUS FilterUnload(FLT_FILTER_UNLOAD_FLAGS flags)
 NTSTATUS DriverUnload(PDRIVER_OBJECT driver_object)
 {
     UNREFERENCED_PARAMETER(driver_object);
-    DebugMessage("DriverUnload: Entered\r\n");
+    // DebugMessage("DriverUnload: Entered\r\n");
     return STATUS_SUCCESS;
 }

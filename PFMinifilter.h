@@ -3,6 +3,7 @@
 #include <fltKernel.h>
 #include <dontuse.h>
 
+#include "Ulti.h"
 #include "Debug.h"
 #include "FileFilter.h"
 #include "ProcessFilter.h"

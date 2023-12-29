@@ -7,7 +7,7 @@ namespace filter
 
 	NTSTATUS ProcessFilter::Register()
 	{
-		DebugMessage("ProcessFilter registering\n");
+		// DebugMessage("ProcessFilter registering\n");
 		NTSTATUS status = PsSetCreateProcessNotifyRoutine((PCREATE_PROCESS_NOTIFY_ROUTINE)&ProcessFilter::CreateOperation, FALSE);
 
 		if (!NT_SUCCESS(status)) 
@@ -20,6 +20,7 @@ namespace filter
 	void ProcessFilter::CreateOperation(HANDLE ppid, HANDLE pid, BOOLEAN create)
 	{
 		UNREFERENCED_PARAMETER(ppid);
+		WCHAR msg[500] = { 0 };
 
 		if (create)
 		{
@@ -29,17 +30,31 @@ namespace filter
 			PsLookupProcessByProcessId(pid, &process);
 			SeLocateProcessImageName(process, &processName);
 
-			DebugMessage("Process %d is created with name: %wZ", (int)pid, processName);
+			if (RtlStringCchPrintfW(msg, 500, L"Process %d is created with name: %wZ", (int)pid, processName) == STATUS_SUCCESS);
+			{
+				// DebugMessage("Sending msg");
+				com::ComPort::Send(msg, 500 * sizeof(WCHAR));
+				// DebugMessage("Sent msg");
+			}
+
+			// DebugMessage("Process %d is created with name: %wZ", (int)pid, processName);
 		}
 		else
 		{
-			DebugMessage("Process %d is terminated.", (int)pid);
+			if (RtlStringCchPrintfW(msg, 500, L"Process %d is terminated.", (int)pid) == STATUS_SUCCESS)
+			{
+				// DebugMessage("Sending msg");
+				com::ComPort::Send(msg, 500 * sizeof(WCHAR));
+				// DebugMessage("Sent msg");
+			}
+
+			// DebugMessage("Process %d is terminated.", (int)pid);
 		}
 	}
 
 	void ProcessFilter::Unload()
 	{
-		DebugMessage("ProcessFilter Unload: Entered");
+		// DebugMessage("ProcessFilter Unload: Entered");
 		PsSetCreateProcessNotifyRoutine((PCREATE_PROCESS_NOTIFY_ROUTINE)&CreateOperation, TRUE);
 	}
 

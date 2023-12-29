@@ -37,7 +37,7 @@ int _cdecl main(void)
     system(&s2[0]);
 
     cout << "Service stop in:" << endl;
-    for (int i = 9; i > 0; i--)
+    for (int i = 19; i > 0; i--)
     {
         cout << i << endl;
         Sleep(1000);

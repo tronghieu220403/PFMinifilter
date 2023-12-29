@@ -4,7 +4,7 @@ namespace filter
 {
     NTSTATUS FileFilter::Register()
     {
-        DebugMessage("FileFilter registering hihi\n");
+        // DebugMessage("FileFilter registering hihi\n");
 
         NTSTATUS status = FltRegisterFilter(p_driver_object_,
             &filter_registration_,
@@ -15,16 +15,16 @@ namespace filter
             switch (status)
             {
             case STATUS_INSUFFICIENT_RESOURCES:
-                DebugMessage("STATUS_INSUFFICIENT_RESOURCES\n");
+                // DebugMessage("STATUS_INSUFFICIENT_RESOURCES\n");
                 break;
             case STATUS_INVALID_PARAMETER:
-                DebugMessage("STATUS_INVALID_PARAMETER\n");
+                // DebugMessage("STATUS_INVALID_PARAMETER\n");
                 break;
             case STATUS_FLT_NOT_INITIALIZED:
-                DebugMessage("STATUS_FLT_NOT_INITIALIZED\n");
+                // DebugMessage("STATUS_FLT_NOT_INITIALIZED\n");
                 break;
             case STATUS_OBJECT_NAME_NOT_FOUND:
-                DebugMessage("STATUS_OBJECT_NAME_NOT_FOUND\n");
+                // DebugMessage("STATUS_OBJECT_NAME_NOT_FOUND\n");
                 break;
             default:
                 break;
@@ -32,7 +32,7 @@ namespace filter
         }
         else
         {
-            DebugMessage("Reg Oke");
+            // DebugMessage("Reg Oke");
         }
 
         FLT_ASSERT(NT_SUCCESS(status));
@@ -51,7 +51,7 @@ namespace filter
             }
             else
             {
-                DebugMessage("Start filtering\n");
+                // DebugMessage("Start filtering\n");
             }
         }
 
@@ -90,6 +90,7 @@ namespace filter
     FLT_POSTOP_CALLBACK_STATUS FileFilter::PostCreateOperation(PFLT_CALLBACK_DATA data, PCFLT_RELATED_OBJECTS flt_objects, PVOID completion_context, FLT_POST_OPERATION_FLAGS flags)
     {
         WCHAR name[260] = { 0 };
+        WCHAR msg[500] = { 0 };
         NTSTATUS status = STATUS_SUCCESS;
         PDF_STREAM_CONTEXT stream_context = NULL;
 
@@ -108,9 +109,14 @@ namespace filter
             {
                 return FLT_POSTOP_FINISHED_PROCESSING;
             }
-            com::ComPort::Send((PVOID)"Created: ", 260);
-            com::ComPort::Send(name, 260);
-            DebugMessage("File is created: %ws \r\n", name);
+            // DebugMessage("File is created: %ws \r\n", name);
+
+            if (RtlStringCchPrintfW(msg, 500, L"File is created: %ws \r\n", name) == STATUS_SUCCESS);
+            {
+                // DebugMessage("Sending msg");
+                com::ComPort::Send(msg, 500 * sizeof(WCHAR));
+                // DebugMessage("Sent msg");
+            }
         }
 
         if (!NT_SUCCESS(data->IoStatus.Status) ||
@@ -150,17 +156,29 @@ namespace filter
         UNREFERENCED_PARAMETER(completion_context);
         UNREFERENCED_PARAMETER(flags);
 
+        WCHAR name[260] = { 0 };
+        WCHAR msg[500] = { 0 };
+
         if (!NT_SUCCESS(data->IoStatus.Status))
         {
-            WCHAR name[260] = { 0 };
-            DebugMessage("WriteOperation: before get file name, must have after");
+            // DebugMessage("WriteOperation: before get file name, must have after");
             // if this doesn't work, we might need to save "completion_context" in pre-operation 
             if (FileFilter::GetFileName(data, name, 260) == false)
             {
                 return FLT_POSTOP_FINISHED_PROCESSING;
             }
+            
             ULONG written = data->Iopb->Parameters.Write.Length;
-            DebugMessage("File %ws is written %x bytes,  \r\n", name, written);
+
+            // DebugMessage("File %ws is written %x bytes,  \r\n", name, written);
+            
+            if (RtlStringCchPrintfW(msg, 500, L"File %ws is written %x bytes,  \r\n", name, written) == STATUS_SUCCESS);
+            {
+                // DebugMessage("Sending msg");
+                com::ComPort::Send(msg, 500 * sizeof(WCHAR));
+                // DebugMessage("Sent msg");
+            }
+
         }
 
         return FLT_POSTOP_FINISHED_PROCESSING;
@@ -311,6 +329,7 @@ namespace filter
         FILE_STANDARD_INFORMATION file_info;
         PDF_STREAM_CONTEXT stream_context = NULL;
         NTSTATUS status;
+        WCHAR msg[500] = { 0 };
 
         UNREFERENCED_PARAMETER(completion_context);
 
@@ -350,11 +369,26 @@ namespace filter
                         stream_context->NameInfo->Name.Length > 0 && 
                         stream_context->NameInfo->Name.Buffer != NULL)
                     {
-                        DebugMessage("A file is deleted with context (%p), name %ws \r\n", stream_context, stream_context->NameInfo->Name.Buffer);
+                        // DebugMessage("A file is deleted with context (%p), name %ws \r\n", stream_context, stream_context->NameInfo->Name.Buffer);
+
+                        if (RtlStringCchPrintfW(msg, 500, L"A file is deleted with context (%p), name %ws \r\n", stream_context, stream_context->NameInfo->Name.Buffer) == STATUS_SUCCESS);
+                        {
+                            // DebugMessage("Sending msg");
+                            com::ComPort::Send(msg, 500 * sizeof(WCHAR));
+                            // DebugMessage("Sent msg");
+                        }
+
                     }
                     else
                     {
-                        DebugMessage("A file is deleted with context (%p), without name \r\n", stream_context);
+                        // DebugMessage("A file is deleted with context (%p), without name \r\n", stream_context);
+                        if (RtlStringCchPrintfW(msg, 500, L"A file is deleted with context (%p), without name \r\n", stream_context) == STATUS_SUCCESS);
+                        {
+                            // DebugMessage("Sending msg");
+                            com::ComPort::Send(msg, 500 * sizeof(WCHAR));
+                            // DebugMessage("Sent msg");
+                        }
+
                     }
                     InterlockedIncrement((volatile LONG *)&(stream_context->IsNotified));
                 }
@@ -382,7 +416,7 @@ namespace filter
 
     NTSTATUS FileFilter::Unload()
     {
-        DebugMessage("FileFilter Unload: Entered");
+        // DebugMessage("FileFilter Unload: Entered");
         if (g_filter_handle_ != NULL)
         {
             FltUnregisterFilter(g_filter_handle_);
