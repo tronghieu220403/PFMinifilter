@@ -41,18 +41,17 @@ NTSTATUS FilterUnload(FLT_FILTER_UNLOAD_FLAGS flags)
 {
     UNREFERENCED_PARAMETER(flags);
 
-    // DebugMessage("MiniFilterUnload: Entered\r\n");
-    filter::ProcessFilter::Unload();
     com::ComPort::Close();
-
     // File Filter Unload must always at the last of the Unload rountine
     filter::FileFilter::Unload();
+    
     return STATUS_SUCCESS;
 }
 
 NTSTATUS DriverUnload(PDRIVER_OBJECT driver_object)
 {
     UNREFERENCED_PARAMETER(driver_object);
-    // DebugMessage("DriverUnload: Entered\r\n");
+    // DebugMessage("MiniFilterUnload: Entered\r\n");
+    filter::ProcessFilter::Unload();
     return STATUS_SUCCESS;
 }
